@@ -1,0 +1,19 @@
+# Ignore everything by default
+*
+
+# Build & CI configuration
+!.gitignore
+!.github/
+!.github/**
+!README.md
+!Dockerfile
+!docker-compose.yml
+
+# Go dependencies
+!go.mod
+!go.sum
+
+# Go source files
+!*.go
+!**/
+!**/*.go

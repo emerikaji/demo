@@ -1,0 +1,15 @@
+services:
+  app:
+    image: ghcr.io/emerikaji/demo:latest
+    networks:
+      - traefik_public
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.demo.rule=Host(`eaji.cc`)'
+      - 'traefik.http.routers.demo.entrypoints=websecure'
+      - 'traefik.http.services.demo.loadbalancer.server.port=8080'
+    restart: unless-stopped
+
+networks:
+  traefik_public:
+    external: true
