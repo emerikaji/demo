@@ -1,3 +1,4 @@
+// Package server is an implementation of server logic to generate http servers at will.
 package server
 
 import (
@@ -7,14 +8,18 @@ import (
 	"time"
 )
 
+// Server wraps http.Server.
 type Server struct {
 	httpServer *http.Server
 }
 
+// ServeHTTP wraps the httpServer's method to implement the http.Handler interface.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.httpServer.Handler.ServeHTTP(w, r)
 }
 
+// New is a Server generator that creates an http.Server with the provided address and an http.ServeMux handler.
+// Each provided route is registered to the multiplexer.
 func New(addr string, routes map[string]http.HandlerFunc) *Server {
 	mux := http.NewServeMux()
 
@@ -34,6 +39,7 @@ func New(addr string, routes map[string]http.HandlerFunc) *Server {
 	}
 }
 
+// Start opens the server for connections and prepares for graceful shutdown once the provided context expires.
 func (s *Server) Start(ctx context.Context) error {
 	errChan := make(chan error, 1)
 
@@ -55,3 +61,5 @@ func (s *Server) Start(ctx context.Context) error {
 		return s.httpServer.Shutdown(shutdownCtx)
 	}
 }
+
+// ─────────────────────────────────────────────────────────────────────────────

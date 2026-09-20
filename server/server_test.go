@@ -112,3 +112,5 @@ func Test_Lifecycle(t *testing.T) {
 		t.Fatal("server failed to shut down within timeout")
 	}
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
