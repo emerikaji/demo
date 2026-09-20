@@ -3,12 +3,14 @@ package api
 import (
 	"bytes"
 	"context"
-	"demo/server"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"demo/server"
+	"demo/store"
 )
 
 type apiTest struct {
@@ -20,9 +22,20 @@ type apiTest struct {
 	expectedBody   string
 }
 
+// ─── Test Cases Table ────────────────────────────────────────────────────────
+
 var tests = []apiTest{
-	{"demo should OK", "/demo", http.MethodGet, nil, http.StatusOK, ""},
+	{
+		name:           "health check should return status available",
+		route:          "/v1/health",
+		method:         http.MethodGet,
+		body:           nil,
+		expectedStatus: http.StatusOK,
+		expectedBody:   `{"status":"available"}`,
+	},
 }
+
+// ─── Test Helpers & Runners ──────────────────────────────────────────────────
 
 func doInMemory(t *testing.T, s *server.Server, tt apiTest) {
 	t.Helper()
@@ -88,9 +101,15 @@ func doHTTP(t *testing.T, client *http.Client, url string, tt apiTest) {
 	}
 }
 
+func setupTestServer() *server.Server {
+	memStore := store.NewMemoryStore()
+	h := New(memStore, memStore, memStore)
+	s := server.New(":8080", h.Routes())
+	return s
+}
+
 func TestRoutes_InMemory(t *testing.T) {
-	h := New()
-	s := server.New(":0", h.Routes())
+	s := setupTestServer()
 
 	for _, tt := range tests {
 		tt := tt
@@ -102,10 +121,10 @@ func TestRoutes_InMemory(t *testing.T) {
 }
 
 func TestRoutes_HTTP(t *testing.T) {
-	h := New()
-	s := server.New(":0", h.Routes())
+	s := setupTestServer()
 	ts := httptest.NewTestServer(t, s)
 	ts.Start()
+
 	client := ts.Client()
 
 	for _, tt := range tests {
@@ -115,6 +134,8 @@ func TestRoutes_HTTP(t *testing.T) {
 			doHTTP(t, client, ts.URL+tt.route, tt)
 		})
 	}
+
+	t.Cleanup(ts.Close)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

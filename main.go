@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"demo/api"
+	"demo/store"
 	"errors"
 	"log"
 	"os"
@@ -18,7 +19,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	h := api.New()
+	memStore := store.NewMemoryStore()
+
+	h := api.New(memStore, memStore, memStore)
 
 	apiServer := server.New(":8080", h.Routes())
 
