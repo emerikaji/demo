@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	"demo/api"
 	"errors"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -18,18 +18,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	apiRoutes := map[string]http.HandlerFunc{
-		"GET /": func(w http.ResponseWriter, r *http.Request) {
-			_, err := w.Write([]byte("Hello World"))
+	h := api.New()
 
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		},
-	}
-
-	apiServer := server.New(":8080", apiRoutes)
+	apiServer := server.New(":8080", h.Routes())
 
 	g, gCtx := errgroup.WithContext(ctx)
 

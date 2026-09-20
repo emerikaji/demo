@@ -24,5 +24,5 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
-      - name: Run Go tests
-        run: go test -v ./...
+      - name: Run Go tests with race detector
+        run: go test -v -race ./...
