@@ -1,9 +1,12 @@
 package api
 
-import "net/http"
+import (
+	"demo/util"
+	"net/http"
+)
 
 func (h *Handler) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	_ = encodeJSON(w, http.StatusOK, Map{
+	_ = util.EncodeJSON(w, http.StatusOK, util.Map{
 		"status": "available",
 	})
 }

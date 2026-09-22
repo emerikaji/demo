@@ -3,6 +3,7 @@ package api
 
 import (
 	"demo/domain"
+	"demo/util"
 	"net/http"
 )
 
@@ -11,14 +12,16 @@ type Handler struct {
 	userStore   domain.UserRepository
 	eventStore  domain.EventRepository
 	ticketStore domain.TicketRepository
+	tokens      util.JWTProvider
 }
 
 // New is a Handler generator.
-func New(userStore domain.UserRepository, eventStore domain.EventRepository, ticketStore domain.TicketRepository) *Handler {
+func New(userStore domain.UserRepository, eventStore domain.EventRepository, ticketStore domain.TicketRepository, tokens util.JWTProvider) *Handler {
 	return &Handler{
 		userStore:   userStore,
 		eventStore:  eventStore,
 		ticketStore: ticketStore,
+		tokens:      tokens,
 	}
 }
 
@@ -28,12 +31,11 @@ func (h *Handler) Routes() map[string]http.HandlerFunc {
 		// Health
 		"GET /v1/health": h.handleHealthCheck,
 
+		// Auth
+		"POST /v1/auth/register": h.handleRegisterUser,
+		"POST /v1/auth/login":    h.handleLoginUser,
+
 		/*
-
-			// Auth
-			"POST /v1/auth/register": h.handleRegisterUser,
-			"POST /v1/auth/login":    h.handleLoginUser,
-
 			// User
 			"GET /v1/user/{id}/events":  h.handleListUserEvents,
 			"GET /v1/user/{id}/tickets": h.handleListUserTickets,

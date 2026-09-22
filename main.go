@@ -4,6 +4,7 @@ import (
 	"context"
 	"demo/api"
 	"demo/store"
+	"demo/util"
 	"errors"
 	"log"
 	"os"
@@ -21,7 +22,7 @@ func main() {
 
 	memStore := store.NewMemoryStore()
 
-	h := api.New(memStore, memStore, memStore)
+	h := api.New(memStore, memStore, memStore, util.NewJWT("test secret")) // TODO get secret from outside
 
 	apiServer := server.New(":8080", h.Routes())
 

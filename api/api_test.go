@@ -3,8 +3,10 @@ package api
 import (
 	"bytes"
 	"context"
+	"demo/domain"
 	"demo/server"
 	"demo/store"
+	"demo/util"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,15 +23,34 @@ type apiTest struct {
 	body           []byte
 	expectedStatus int
 	expectedBody   string
+	setup          func(t *testing.T, s *store.MemoryStore, j *MockJWT)
 }
 
 // ─── Test Helpers & Runners ──────────────────────────────────────────────────
 
-func setupTestServer(t *testing.T) *server.Server {
+type MockJWT struct {
+	returnToken  string
+	returnErr    error
+	returnClaims util.CustomClaims
+}
+
+func (m MockJWT) Generate(user *domain.User) (string, error) {
+	return m.returnToken, m.returnErr
+}
+
+func (m MockJWT) Parse(tokenString string) (*util.CustomClaims, error) {
+	return &m.returnClaims, m.returnErr
+}
+
+func setupTestServer(t *testing.T, tt apiTest) *server.Server {
 	t.Helper()
 
 	memStore := store.NewMemoryStore()
-	h := New(memStore, memStore, memStore)
+	tokens := &MockJWT{}
+	if tt.setup != nil {
+		tt.setup(t, memStore, tokens)
+	}
+	h := New(memStore, memStore, memStore, tokens)
 	s := server.New(":8080", h.Routes())
 	return s
 }
@@ -37,11 +58,11 @@ func setupTestServer(t *testing.T) *server.Server {
 func testRoutesInMemory(t *testing.T, tts []apiTest) {
 	t.Helper()
 
-	s := setupTestServer(t)
-
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			s := setupTestServer(t, tt)
 
 			var bodyReader io.Reader
 			if tt.body != nil {
@@ -70,16 +91,14 @@ func testRoutesInMemory(t *testing.T, tts []apiTest) {
 func testRoutesHTTP(t *testing.T, tts []apiTest) {
 	t.Helper()
 
-	s := setupTestServer(t)
-
-	ts := httptest.NewTestServer(t, s)
-	ts.Start()
-	client := ts.Client()
-
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			s := setupTestServer(t, tt)
+			ts := httptest.NewTestServer(t, s)
+			ts.Start()
+			client := ts.Client()
 			url := ts.URL + tt.route
 
 			var bodyReader io.Reader

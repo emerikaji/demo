@@ -1,4 +1,4 @@
-package api
+package util
 
 import (
 	"encoding/json"
@@ -11,8 +11,8 @@ import (
 // Map wraps into a type the typical structure of JSON
 type Map map[string]any
 
-// encodeJSON writes a JSON response with the given HTTP status code and headers.
-func encodeJSON(w http.ResponseWriter, status int, data any) error {
+// EncodeJSON writes a JSON response with the given HTTP status code and headers.
+func EncodeJSON(w http.ResponseWriter, status int, data any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -23,11 +23,16 @@ func encodeJSON(w http.ResponseWriter, status int, data any) error {
 	return json.NewEncoder(w).Encode(data)
 }
 
-// decodeJSON reads JSON from the request body into a target struct, enforcing strict rules:
+// RespondError sends a standardized JSON error response
+func RespondError(w http.ResponseWriter, status int, message string) {
+	_ = EncodeJSON(w, status, Map{"error": message})
+}
+
+// DecodeJSON reads JSON from the request body into a target struct, enforcing strict rules:
 // - Max 1MB body limit to prevent OOM DOS vectors
 // - Disallows unknown fields in payloads
 // - Ensures single JSON object stream
-func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	maxBytes := int64(1_048_576) // 1MB limit
 	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 
@@ -70,7 +75,4 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	return nil
 }
 
-// respondError sends a standardized JSON error response
-func respondError(w http.ResponseWriter, status int, message string) {
-	_ = encodeJSON(w, status, Map{"error": message})
-}
+// ─────────────────────────────────────────────────────────────────────────────
