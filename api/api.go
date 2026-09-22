@@ -30,37 +30,29 @@ func (h *Handler) Routes() map[string]http.HandlerFunc {
 
 		/*
 
-		// Auth
-		"POST /v1/auth/register": h.handleRegisterUser,
-		"POST /v1/auth/login":    h.handleLoginUser,
+			// Auth
+			"POST /v1/auth/register": h.handleRegisterUser,
+			"POST /v1/auth/login":    h.handleLoginUser,
 
-		// User
-		"GET /v1/user/{id}/events":  h.handleListUserEvents,
-		"GET /v1/user/{id}/tickets": h.handleListUserTickets,
+			// User
+			"GET /v1/user/{id}/events":  h.handleListUserEvents,
+			"GET /v1/user/{id}/tickets": h.handleListUserTickets,
 
-		// Events
-		"GET /v1/events":              h.handleListEvents,
-		"GET /v1/events/{id}":         h.handleGetEvent,
-		"POST /v1/events":             h.handleCreateEvent,
-		"PATCH /v1/events/{id}":       h.handleUpdateEvent,
-		"POST /v1/events/{id}/cancel": h.handleCancelEvent,
+			// Events
+			"GET /v1/events":              h.handleListEvents,
+			"GET /v1/events/{id}":         h.handleGetEvent,
+			"POST /v1/events":             h.handleCreateEvent,
+			"PATCH /v1/events/{id}":       h.handleUpdateEvent,
+			"POST /v1/events/{id}/cancel": h.handleCancelEvent,
 
-		// Tickets & Reservations
-		"GET /v1/tickets/{id}":     h.handleGetTicket,
-		"POST /v1/tickets/reserve": h.handleReserveTicket,
-		"POST /v1/tickets/confirm": h.handleConfirmReservation,
-		"POST /v1/tickets/cancel":  h.handleCancelReservation,
+			// Tickets & Reservations
+			"GET /v1/tickets/{id}":     h.handleGetTicket,
+			"POST /v1/tickets/reserve": h.handleReserveTicket,
+			"POST /v1/tickets/confirm": h.handleConfirmReservation,
+			"POST /v1/tickets/cancel":  h.handleCancelReservation,
 
-		 */
+		*/
 	}
-}
-
-// ─── Healthcheck ─────────────────────────────────────────────────────────────
-
-func (h *Handler) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
-	_ = encodeJSON(w, http.StatusOK, Map{
-		"status": "available",
-	})
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
