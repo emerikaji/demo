@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// ─── Generic Jwt Provider ────────────────────────────────────────────────────
+
 // CustomClaims holds custom JWT claims along with standard RegisteredClaims.
 type CustomClaims struct {
 	UserID uuid.UUID       `json:"user_id"`
@@ -22,6 +24,8 @@ type JWTProvider interface {
 	Generate(user *domain.User) (string, error)
 	Parse(tokenString string) (*CustomClaims, error)
 }
+
+// ─── Jwt Implementation ──────────────────────────────────────────────────────
 
 type JWT struct {
 	secret []byte
