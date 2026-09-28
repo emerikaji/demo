@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// ─── Error Types ─────────────────────────────────────────────────────────────
+
 var (
 	ErrNotFound           = errors.New("resource not found")
 	ErrConflict           = errors.New("resource already exists")
@@ -19,12 +21,16 @@ var (
 	ErrUnauthorizedRole   = errors.New("insufficient privileges to assign this role")
 )
 
+// ─── User Management ─────────────────────────────────────────────────────────
+
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *User) error
 	UpdateUser(ctx context.Context, user *User) error
 	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
+
+// ─── Event Management ────────────────────────────────────────────────────────
 
 type EventFilter struct {
 	Status *EventStatus // Optional status filter
@@ -39,6 +45,8 @@ type EventRepository interface {
 	GetEvent(ctx context.Context, id uuid.UUID) (*Event, error)
 	ListEvents(ctx context.Context, filter EventFilter) ([]*Event, error)
 }
+
+// ─── Ticket And Reservation Management ───────────────────────────────────────
 
 type TicketRepository interface {
 	ReserveTicket(ctx context.Context, ticket *Ticket) error

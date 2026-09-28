@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+// ─── Server Generation Test ──────────────────────────────────────────────────
+
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -45,7 +47,6 @@ func TestNew(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			s := New(tt.addr, tt.routes)
@@ -65,6 +66,8 @@ func TestNew(t *testing.T) {
 		})
 	}
 }
+
+// ─── Server Usage Test ───────────────────────────────────────────────────────
 
 func Test_Lifecycle(t *testing.T) {
 	routes := map[string]http.HandlerFunc{

@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+// ─── Server Generator ────────────────────────────────────────────────────────
+
 // Server wraps http.Server.
 type Server struct {
 	httpServer *http.Server

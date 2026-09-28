@@ -11,6 +11,8 @@ import (
 // Map wraps into a type the typical structure of JSON
 type Map map[string]any
 
+// ─── JSON Encoder/decoder ────────────────────────────────────────────────────
+
 // EncodeJSON writes a JSON response with the given HTTP status code and headers.
 func EncodeJSON(w http.ResponseWriter, status int, data any) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -21,11 +23,6 @@ func EncodeJSON(w http.ResponseWriter, status int, data any) error {
 	}
 
 	return json.NewEncoder(w).Encode(data)
-}
-
-// RespondError sends a standardized JSON error response
-func RespondError(w http.ResponseWriter, status int, message string) {
-	_ = EncodeJSON(w, status, Map{"error": message})
 }
 
 // DecodeJSON reads JSON from the request body into a target struct, enforcing strict rules:
@@ -73,6 +70,13 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	}
 
 	return nil
+}
+
+// ─── Shortcut Methods ────────────────────────────────────────────────────────
+
+// RespondError sends a standardized JSON error response
+func RespondError(w http.ResponseWriter, status int, message string) {
+	_ = EncodeJSON(w, status, Map{"error": message})
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

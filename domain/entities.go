@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// ─── User Definition ─────────────────────────────────────────────────────────
+
 type UserRole string
 
 const (
@@ -31,6 +33,8 @@ type User struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+// ─── Event Definition ────────────────────────────────────────────────────────
+
 type EventStatus string
 
 const (
@@ -50,6 +54,8 @@ type Event struct {
 	StartsAt         time.Time   `json:"starts_at"`
 	CreatedAt        time.Time   `json:"created_at"`
 }
+
+// ─── Ticket Definition ───────────────────────────────────────────────────────
 
 type TicketStatus string
 

@@ -16,6 +16,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// ─── Entrypoint ──────────────────────────────────────────────────────────────
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -34,11 +36,13 @@ func main() {
 		return apiServer.Start(gCtx)
 	})
 
-	log.Println("Server accepting connections")
+	log.Println("Server accepting connections.")
 
 	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		log.Fatalf("Server error: %v", err)
 	}
 
-	log.Println("Server stopped gracefully")
+	log.Println("Server stopped gracefully.")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────

@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+// ─── API Definition ──────────────────────────────────────────────────────────
+
 // Handler stores API dependencies and exposes the routes.
 type Handler struct {
 	userStore   domain.UserRepository
@@ -25,17 +27,22 @@ func New(userStore domain.UserRepository, eventStore domain.EventRepository, tic
 	}
 }
 
+// ─── API Routes ──────────────────────────────────────────────────────────────
+
 // Routes provides the pattern-to-handler map for the API.
 func (h *Handler) Routes() map[string]http.HandlerFunc {
 	return map[string]http.HandlerFunc{
-		// Health
+
+		// ─── Healthcheck ─────────────────────────────────────────────
+
 		"GET /v1/health": h.handleHealthCheck,
 
-		// Auth
+		// ─── Auth ────────────────────────────────────────────────────
+
 		"POST /v1/auth/register": h.handleRegisterUser,
 		"POST /v1/auth/login":    h.handleLoginUser,
 
-		/*
+		/* TODO
 			// User
 			"GET /v1/user/{id}/events":  h.handleListUserEvents,
 			"GET /v1/user/{id}/tickets": h.handleListUserTickets,

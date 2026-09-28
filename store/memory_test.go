@@ -1,4 +1,4 @@
-package store_test
+package store
 
 import (
 	"context"
@@ -9,15 +9,9 @@ import (
 	"time"
 
 	"demo/domain"
-	"demo/store"
 
 	"github.com/google/uuid"
 )
-
-// setupStore creates a fresh instance of MemoryStore for each test run.
-func setupStore() *store.MemoryStore {
-	return store.NewMemoryStore()
-}
 
 // ─── UserRepository Tests ────────────────────────────────────────────────────
 
@@ -26,7 +20,7 @@ func TestCreateUser(t *testing.T) {
 
 	t.Run("successfully creates user with default attendee role", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		user := &domain.User{
@@ -58,7 +52,7 @@ func TestCreateUser(t *testing.T) {
 
 	t.Run("returns ErrConflict when ID already exists", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		userID := uuid.New()
@@ -75,7 +69,7 @@ func TestCreateUser(t *testing.T) {
 
 	t.Run("returns ErrEmailAlreadyExists when email is registered", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		u1 := &domain.User{ID: uuid.New(), Email: "jane.doe@example.com"}
@@ -95,7 +89,7 @@ func TestUpdateUser(t *testing.T) {
 
 	t.Run("successfully updates email and updates lookup index", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		user := &domain.User{ID: uuid.New(), Email: "old@example.com", Role: domain.RoleAttendee}
@@ -123,7 +117,7 @@ func TestUpdateUser(t *testing.T) {
 
 	t.Run("fails to update email if target email belongs to another user", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		u1 := &domain.User{ID: uuid.New(), Email: "drusilla@example.com"}
@@ -145,7 +139,7 @@ func TestGetUserByID(t *testing.T) {
 
 	t.Run("returns ErrUserNotFound for missing ID", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 
 		_, err := s.GetUserByID(context.Background(), uuid.New())
 		if !errors.Is(err, domain.ErrUserNotFound) {
@@ -159,7 +153,7 @@ func TestGetUserByEmail(t *testing.T) {
 
 	t.Run("fetches user case-insensitively", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		user := &domain.User{ID: uuid.New(), Email: "jane.doe@example.com"}
@@ -180,7 +174,7 @@ func TestGetUserByEmail(t *testing.T) {
 func TestCreateAndGetEvent(t *testing.T) {
 	t.Parallel()
 
-	s := setupStore()
+	s := NewMemoryStore()
 	ctx := context.Background()
 
 	event := &domain.Event{
@@ -211,7 +205,7 @@ func TestUpdateEvent(t *testing.T) {
 
 	t.Run("cannot update cancelled event", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		event := &domain.Event{
@@ -231,7 +225,7 @@ func TestUpdateEvent(t *testing.T) {
 
 	t.Run("prevents lowering capacity below issued tickets", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		// Initial capacity 10, remaining 2 -> 8 tickets issued/sold
@@ -253,7 +247,7 @@ func TestUpdateEvent(t *testing.T) {
 
 	t.Run("adjusts remaining tickets when capacity is increased", func(t *testing.T) {
 		t.Parallel()
-		s := setupStore()
+		s := NewMemoryStore()
 		ctx := context.Background()
 
 		// 10 capacity, 2 remaining = 8 tickets issued
@@ -281,7 +275,7 @@ func TestUpdateEvent(t *testing.T) {
 func TestListEvents(t *testing.T) {
 	t.Parallel()
 
-	s := setupStore()
+	s := NewMemoryStore()
 	ctx := context.Background()
 
 	// Create test organizers
@@ -293,7 +287,7 @@ func TestListEvents(t *testing.T) {
 	cancelledStatus := domain.EventStatusCancelled
 
 	// Organizer A: 2 Published, 1 Draft
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		_ = s.CreateEvent(ctx, &domain.Event{
 			ID:          uuid.New(),
 			OrganizerID: organizerA,
@@ -401,7 +395,7 @@ func TestListEvents(t *testing.T) {
 func TestTicketLifecycle(t *testing.T) {
 	t.Parallel()
 
-	s := setupStore()
+	s := NewMemoryStore()
 	ctx := context.Background()
 
 	event := &domain.Event{
@@ -461,7 +455,7 @@ func TestTicketLifecycle(t *testing.T) {
 func TestConfirmExpiredTicket(t *testing.T) {
 	t.Parallel()
 
-	s := setupStore()
+	s := NewMemoryStore()
 	ctx := context.Background()
 
 	event := &domain.Event{ID: uuid.New(), Capacity: 10, RemainingTickets: 10}
@@ -487,7 +481,7 @@ func TestConfirmExpiredTicket(t *testing.T) {
 func TestConcurrentTicketReservations(t *testing.T) {
 	t.Parallel()
 
-	s := setupStore()
+	s := NewMemoryStore()
 	ctx := context.Background()
 
 	totalCapacity := 50

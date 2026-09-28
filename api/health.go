@@ -5,8 +5,13 @@ import (
 	"net/http"
 )
 
+// ─── Healthcheck Route ───────────────────────────────────────────────────────
+
+// handleHealthCheck : /v1/health
 func (h *Handler) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	_ = util.EncodeJSON(w, http.StatusOK, util.Map{
 		"status": "available",
 	})
 }
+
+// ─────────────────────────────────────────────────────────────────────────────

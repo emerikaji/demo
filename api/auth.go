@@ -12,6 +12,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// ─── Request Data Types ──────────────────────────────────────────────────────
+
 type registerUserRequest struct {
 	Email    string          `json:"email"`
 	Password string          `json:"password"`
@@ -23,6 +25,9 @@ type loginUserRequest struct {
 	Password string `json:"password"`
 }
 
+// ─── Auth Routes ─────────────────────────────────────────────────────────────
+
+// handleRegisterUser : /v1/auth/register
 func (h *Handler) handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 	var req registerUserRequest
 	if err := util.DecodeJSON(w, r, &req); err != nil {
@@ -70,6 +75,7 @@ func (h *Handler) handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// handleLoginUser : /v1/auth/login
 func (h *Handler) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	var req loginUserRequest
 	if err := util.DecodeJSON(w, r, &req); err != nil {
@@ -110,3 +116,5 @@ func (h *Handler) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		"token": token,
 	})
 }
+
+// ─────────────────────────────────────────────────────────────────────────────

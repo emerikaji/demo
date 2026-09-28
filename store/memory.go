@@ -11,6 +11,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// MemoryStore is an implementation of in-memory storage.
+// Concurrency is handled with a RWMutex.
 type MemoryStore struct {
 	mu           sync.RWMutex
 	users        map[uuid.UUID]*domain.User
