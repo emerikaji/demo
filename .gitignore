@@ -6,6 +6,7 @@
 !.github/
 !.github/**
 !README.md
+!CHANGELOG.md
 !Dockerfile
 !docker-compose.yml
 
