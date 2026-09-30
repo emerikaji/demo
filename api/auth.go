@@ -27,7 +27,7 @@ type loginUserRequest struct {
 
 // ─── Auth Routes ─────────────────────────────────────────────────────────────
 
-// handleRegisterUser : /v1/auth/register
+// handleRegisterUser : POST /v1/auth/register
 func (h *Handler) handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 	var req registerUserRequest
 	if err := util.DecodeJSON(w, r, &req); err != nil {
@@ -75,7 +75,7 @@ func (h *Handler) handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleLoginUser : /v1/auth/login
+// handleLoginUser : POST /v1/auth/login
 func (h *Handler) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 	var req loginUserRequest
 	if err := util.DecodeJSON(w, r, &req); err != nil {
