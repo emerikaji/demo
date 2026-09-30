@@ -20,6 +20,7 @@ type apiTest struct {
 	name           string
 	route          string
 	method         string
+	headers        map[string]string
 	body           []byte
 	expectedStatus int
 	expectedBody   string
