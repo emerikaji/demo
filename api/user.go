@@ -13,7 +13,9 @@ import (
 
 // handleListUserEvents : GET /v1/user/{id}/events
 func (h *Handler) handleListUserEvents(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse and validate path parameter
+
+	// ─── Parse Param And Header ──────────────────────────────────────────
+
 	userIDStr := r.PathValue("id")
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
@@ -21,14 +23,14 @@ func (h *Handler) handleListUserEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. JWT Verification: Extract claims attached by JWTMiddleware
 	claims, err := h.tokens.Parse(r.Header.Get("Authorization"))
 	if err != nil || claims == nil {
 		util.RespondError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
-	// 3. Identity Verification: Ensure authenticated user matches requested path ID
+	// ─── Check User Authentication ───────────────────────────────────────
+
 	if claims.UserID != userID {
 		util.RespondError(w, http.StatusUnauthorized, "unauthorized")
 		return
@@ -36,7 +38,6 @@ func (h *Handler) handleListUserEvents(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	// 4. Fetch user to verify existence and check role
 	user, err := h.userStore.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
@@ -47,33 +48,91 @@ func (h *Handler) handleListUserEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 5. Role validation: only organizers can access user events route
 	if user.Role != domain.RoleOrganizer {
 		util.RespondError(w, http.StatusForbidden, "forbidden: organizer role required")
 		return
 	}
 
-	// 6. Fetch all events (draft + published) created by this organizer
+	// ─── Fetch Corresponding Events ──────────────────────────────────────
+
 	events, err := h.eventStore.ListEvents(ctx, domain.EventFilter{UserID: &userID})
 	if err != nil {
 		util.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
-	// Ensure empty slice serializes to `[]` instead of `null`
 	if events == nil {
 		events = []*domain.Event{}
 	}
 
-	// 7. Respond with 200 OK
+	// ─── Respond With Status OK ──────────────────────────────────────────
+
 	if err := util.EncodeJSON(w, http.StatusOK, map[string]any{"events": events}); err != nil {
 		util.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 }
 
+// handleListUserTickets : GET /v1/user/{id}/tickets
 func (h *Handler) handleListUserTickets(w http.ResponseWriter, r *http.Request) {
 
+	// ─── Parse Param And Header ──────────────────────────────────────────
+
+	userIDStr := r.PathValue("id")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		util.RespondError(w, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	claims, err := h.tokens.Parse(r.Header.Get("Authorization"))
+	if err != nil || claims == nil {
+		util.RespondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	// ─── Check User Authentication ───────────────────────────────────────
+
+	if claims.UserID != userID {
+		util.RespondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	ctx := r.Context()
+
+	user, err := h.userStore.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			util.RespondError(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		util.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	if user.Role != domain.RoleAttendee {
+		util.RespondError(w, http.StatusForbidden, "forbidden: attendee role required")
+		return
+	}
+
+	// ─── Fetch Corresponding Tickets ─────────────────────────────────────
+
+	tickets, err := h.ticketStore.ListTickets(ctx, domain.TicketFilter{UserID: &userID, Status: domain.TicketStatusConfirmed})
+	if err != nil {
+		util.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	if tickets == nil {
+		tickets = []*domain.Ticket{}
+	}
+
+	// ─── Respond With Status OK ──────────────────────────────────────────
+
+	if err := util.EncodeJSON(w, http.StatusOK, map[string]any{"tickets": tickets}); err != nil {
+		util.RespondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

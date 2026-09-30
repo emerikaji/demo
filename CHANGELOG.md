@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `user` routes.
+
+### Changed
+
+-  Getting tickets from the datastore now works similarly to events with a filter struct.
+
 ## [0.1.0] - 28/09/2026
 
 ### Added

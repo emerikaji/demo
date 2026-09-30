@@ -358,7 +358,7 @@ func TestListEvents(t *testing.T) {
 
 		events, err := s.ListEvents(ctx, domain.EventFilter{
 			UserID: &organizerA,
-			Status: &publishedStatus,
+			Status: publishedStatus,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -377,7 +377,7 @@ func TestListEvents(t *testing.T) {
 		t.Parallel()
 
 		events, err := s.ListEvents(ctx, domain.EventFilter{
-			Status: &publishedStatus,
+			Status: publishedStatus,
 			Limit:  2,
 			Offset: 1,
 		})

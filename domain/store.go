@@ -33,8 +33,8 @@ type UserRepository interface {
 // ─── Event Management ────────────────────────────────────────────────────────
 
 type EventFilter struct {
-	Status *EventStatus // Optional status filter
-	UserID *uuid.UUID   // Optional user filter
+	Status EventStatus // Optional status filter
+	UserID *uuid.UUID  // Optional user filter
 	Limit  int
 	Offset int
 }
@@ -48,12 +48,20 @@ type EventRepository interface {
 
 // ─── Ticket And Reservation Management ───────────────────────────────────────
 
+type TicketFilter struct {
+	Status  TicketStatus
+	UserID  *uuid.UUID
+	EventID *uuid.UUID
+	Limit   int
+	Offset  int
+}
+
 type TicketRepository interface {
 	ReserveTicket(ctx context.Context, ticket *Ticket) error
 	ConfirmReservation(ctx context.Context, ticketID uuid.UUID) error
 	CancelReservation(ctx context.Context, ticketID uuid.UUID) error
 	GetTicket(ctx context.Context, id uuid.UUID) (*Ticket, error)
-	ListUserTickets(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*Ticket, error)
+	ListTickets(ctx context.Context, filter TicketFilter) ([]*Ticket, error)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

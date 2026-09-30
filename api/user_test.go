@@ -212,6 +212,21 @@ var userTests = []apiTest{
 				t.Fatalf("failed to seed user: %v", err)
 			}
 
+			err = s.CreateEvent(ctx, &domain.Event{
+				ID:               eventID1,
+				OrganizerID:      userIDJane,
+				Title:            "GolangConf 2026",
+				Description:      "Go-conference with a program built on real-world tasks",
+				Capacity:         100,
+				RemainingTickets: 100,
+				Status:           domain.EventStatusPublished,
+				StartsAt:         time.Date(2027, 4, 20, 10, 0, 0, 0, time.UTC),
+				CreatedAt:        time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC),
+			})
+			if err != nil {
+				t.Fatalf("failed to seed published event: %v", err)
+			}
+
 			// 1. Confirmed ticket (should appear without expires_at)
 			err = s.ReserveTicket(ctx, &domain.Ticket{
 				ID:        ticketID1,

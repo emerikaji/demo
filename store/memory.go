@@ -1,7 +1,9 @@
 package store
 
 import (
+	"bytes"
 	"context"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -187,10 +189,11 @@ func (s *MemoryStore) ListEvents(ctx context.Context, filter domain.EventFilter)
 
 	for _, event := range s.events {
 		// Filter by status if requested
-		if filter.Status != nil && event.Status != *filter.Status {
+		if filter.Status != "" && event.Status != filter.Status {
 			continue
 		}
 
+		// Filter by ID if requested
 		if filter.UserID != nil && event.OrganizerID != *filter.UserID {
 			continue
 		}
@@ -209,6 +212,10 @@ func (s *MemoryStore) ListEvents(ctx context.Context, filter domain.EventFilter)
 		copied := *event
 		result = append(result, &copied)
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return bytes.Compare(result[i].ID[:], result[j].ID[:]) < 0
+	})
 
 	return result, nil
 }
@@ -289,26 +296,42 @@ func (s *MemoryStore) GetTicket(ctx context.Context, id uuid.UUID) (*domain.Tick
 	return &copied, nil
 }
 
-func (s *MemoryStore) ListUserTickets(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*domain.Ticket, error) {
+func (s *MemoryStore) ListTickets(ctx context.Context, filter domain.TicketFilter) ([]*domain.Ticket, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var result []*domain.Ticket
-	i := 0
+	skipped := 0
+
 	for _, ticket := range s.tickets {
-		if ticket.UserID != userID {
+		// Filter by status if requested
+		if filter.Status != "" && ticket.Status != filter.Status {
 			continue
 		}
-		if i < offset {
-			i++
+
+		// Filter by ID if requested
+		if filter.UserID != nil && ticket.UserID != *filter.UserID {
 			continue
 		}
-		if len(result) >= limit {
+
+		// Apply pagination offset
+		if skipped < filter.Offset {
+			skipped++
+			continue
+		}
+
+		// Apply pagination limit
+		if filter.Limit > 0 && len(result) >= filter.Limit {
 			break
 		}
+
 		copied := *ticket
 		result = append(result, &copied)
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return bytes.Compare(result[i].ID[:], result[j].ID[:]) < 0
+	})
 
 	return result, nil
 }
