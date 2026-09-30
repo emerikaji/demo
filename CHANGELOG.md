@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 28/09/2026
+
 ### Added
 
 - First functional build of the API:
-  - Runs on `0.0.0.0:8080`.
+  - Runs on `0.0.0.0:8080` inside a container, made available at `eaji.cc` via Traefik routing.
   - Stores data in-memory.
 - `healthcheck` route.
 - `auth` routes.
