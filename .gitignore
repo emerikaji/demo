@@ -7,6 +7,7 @@
 !.github/**
 !README.md
 !CHANGELOG.md
+!AGENTS.md
 !Dockerfile
 !docker-compose.yml
 
