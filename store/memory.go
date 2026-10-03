@@ -134,6 +134,8 @@ func (s *MemoryStore) CreateEvent(ctx context.Context, event *domain.Event) erro
 		return domain.ErrConflict
 	}
 
+	event.RemainingTickets = event.Capacity
+
 	copied := *event
 	s.events[event.ID] = &copied
 	return nil
@@ -164,6 +166,19 @@ func (s *MemoryStore) UpdateEvent(ctx context.Context, updated *domain.Event) er
 
 	copied := *updated
 	s.events[updated.ID] = &copied
+	return nil
+}
+
+func (s *MemoryStore) DeleteEventDraft(ctx context.Context, id uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	_, exists := s.events[id]
+	if !exists {
+		return domain.ErrNotFound
+	}
+
+	delete(s.events, id)
 	return nil
 }
 

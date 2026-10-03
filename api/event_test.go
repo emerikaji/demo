@@ -2,13 +2,12 @@ package api
 
 import (
 	"context"
+	"demo/domain"
+	"demo/store"
 	"fmt"
 	"net/http"
 	"testing"
 	"time"
-
-	"demo/domain"
-	"demo/store"
 
 	"github.com/google/uuid"
 )
@@ -188,7 +187,7 @@ var eventTests = []apiTest{
 		route:          fmt.Sprintf("/v1/events/%s", eventID1),
 		method:         http.MethodGet,
 		expectedStatus: http.StatusOK,
-		expectedBody:   fmt.Sprintf(`{"id":"%s","organizer_id":"%s","title":"GolangConf 2026","description":"Go-conference with a program built on real-world tasks","capacity":100,"remaining_tickets":100,"status":"published","starts_at":"2027-04-20T10:00:00Z","created_at":"2026-09-01T00:00:00Z"}`, eventID1, userIDJane),
+		expectedBody:   fmt.Sprintf(`{"event":{"id":"%s","organizer_id":"%s","title":"GolangConf 2026","description":"Go-conference with a program built on real-world tasks","capacity":100,"remaining_tickets":100,"status":"published","starts_at":"2027-04-20T10:00:00Z","created_at":"2026-09-01T00:00:00Z"}}`, eventID1, userIDJane),
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			err := s.CreateEvent(context.Background(), &domain.Event{
 				ID:               eventID1,
@@ -224,7 +223,7 @@ var eventTests = []apiTest{
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		body:           []byte(`{"title":"New Conf","description":"Desc","capacity":100,"starts_at":"2027-06-01T10:00:00Z"}`),
 		expectedStatus: http.StatusForbidden,
-		expectedBody:   `{"error":"forbidden: organizer role required"}`,
+		expectedBody:   `{"error":"organizer role required"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			j.returnClaims.UserID = userIDAlexandrina
 
@@ -285,7 +284,7 @@ var eventTests = []apiTest{
 		route:          "/v1/events",
 		method:         http.MethodPost,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
-		body:           []byte(`{"title":"New Conf","capacity":0,"starts_at":"2027-06-01T10:00:00Z"}`),
+		body:           []byte(`{"title":"New Conf","capacity":-1,"starts_at":"2027-06-01T10:00:00Z"}`),
 		expectedStatus: http.StatusBadRequest,
 		expectedBody:   `{"error":"capacity must be greater than 0"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
@@ -407,7 +406,7 @@ var eventTests = []apiTest{
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		body:           []byte(`{"title":"Hacked Title"}`),
 		expectedStatus: http.StatusForbidden,
-		expectedBody:   `{"error":"forbidden: you do not own this event"}`,
+		expectedBody:   `{"error":"you do not own this event"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJohn // Authenticated as John
@@ -492,15 +491,21 @@ var eventTests = []apiTest{
 
 			// 10 capacity, 2 remaining -> 8 tickets issued
 			err = s.CreateEvent(ctx, &domain.Event{
-				ID:               eventID1,
-				OrganizerID:      userIDJane,
-				Title:            "GolangConf 2026",
-				Capacity:         10,
-				RemainingTickets: 2,
-				Status:           domain.EventStatusPublished,
+				ID:          eventID1,
+				OrganizerID: userIDJane,
+				Title:       "GolangConf 2026",
+				Capacity:    10,
+				Status:      domain.EventStatusPublished,
 			})
 			if err != nil {
 				t.Fatalf("failed to seed event: %v", err)
+			}
+			for range 8 {
+				_ = s.ReserveTicket(ctx, &domain.Ticket{
+					ID:      uuid.New(),
+					EventID: eventID1,
+					Status:  domain.TicketStatusReserved,
+				})
 			}
 		},
 	},
@@ -539,7 +544,7 @@ var eventTests = []apiTest{
 		},
 	},
 
-	// ─── Cancel Event ────────────────────────────────────────────────────
+	// ─── Cancel / Delete Event ───────────────────────────────────────────
 
 	{
 		name:           "cancel event - missing auth header should return 401",
@@ -585,7 +590,7 @@ var eventTests = []apiTest{
 		method:         http.MethodDelete,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		expectedStatus: http.StatusForbidden,
-		expectedBody:   `{"error":"forbidden: you do not own this event"}`,
+		expectedBody:   `{"error":"you do not own this event"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJohn
@@ -613,12 +618,45 @@ var eventTests = []apiTest{
 		},
 	},
 	{
+		name:           "cancel event - draft event gets hard deleted",
+		route:          fmt.Sprintf("/v1/events/%s", eventIDDraft),
+		method:         http.MethodDelete,
+		headers:        map[string]string{"Authorization": "Bearer valid-token"},
+		expectedStatus: http.StatusOK,
+		expectedBody:   `{"message":"event deleted successfully"}`,
+		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
+			ctx := context.Background()
+			j.returnClaims.UserID = userIDJane
+
+			err := s.CreateUser(ctx, &domain.User{
+				ID:    userIDJane,
+				Email: "janedoe@example.com",
+				Role:  domain.RoleOrganizer,
+			})
+			if err != nil {
+				t.Fatalf("failed to seed user: %v", err)
+			}
+
+			err = s.CreateEvent(ctx, &domain.Event{
+				ID:               eventIDDraft,
+				OrganizerID:      userIDJane,
+				Title:            "Draft Workshop",
+				Capacity:         20,
+				RemainingTickets: 20,
+				Status:           domain.EventStatusDraft,
+			})
+			if err != nil {
+				t.Fatalf("failed to seed draft event: %v", err)
+			}
+		},
+	},
+	{
 		name:           "cancel event - already cancelled event should return 400",
 		route:          fmt.Sprintf("/v1/events/%s", eventIDCancelled),
 		method:         http.MethodDelete,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		expectedStatus: http.StatusBadRequest,
-		expectedBody:   `{"error":"cannot update a cancelled event"}`,
+		expectedBody:   `{"error":"cannot cancel an already cancelled event"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJane
@@ -646,7 +684,7 @@ var eventTests = []apiTest{
 		},
 	},
 	{
-		name:           "cancel event - successful cancellation should return 200",
+		name:           "cancel event - successful cancellation of published event",
 		route:          fmt.Sprintf("/v1/events/%s", eventID1),
 		method:         http.MethodDelete,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},

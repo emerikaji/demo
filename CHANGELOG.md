@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `user` routes.
+- `event` routes.
 
 ### Changed
 
--  Getting tickets from the datastore now works similarly to events with a filter struct.
+- Getting tickets from the datastore now works similarly to events with a filter struct.
+- Events that are in draft status won't be canceled but deleted outright.
+- Ticket capacity is now fully managed by the datastore and not the outfacing API.
 
 ## [0.1.0] - 28/09/2026
 

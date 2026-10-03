@@ -16,8 +16,8 @@ func (h *Handler) handleListUserEvents(w http.ResponseWriter, r *http.Request) {
 
 	// ─── Parse Param And Header ──────────────────────────────────────────
 
-	userIDStr := r.PathValue("id")
-	userID, err := uuid.Parse(userIDStr)
+	uidString := r.PathValue("id")
+	uid, err := uuid.Parse(uidString)
 	if err != nil {
 		util.RespondError(w, http.StatusBadRequest, "invalid user id")
 		return
@@ -31,14 +31,14 @@ func (h *Handler) handleListUserEvents(w http.ResponseWriter, r *http.Request) {
 
 	// ─── Check User Authentication ───────────────────────────────────────
 
-	if claims.UserID != userID {
+	if claims.UserID != uid {
 		util.RespondError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	ctx := r.Context()
 
-	user, err := h.userStore.GetUserByID(ctx, userID)
+	user, err := h.userStore.GetUserByID(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			util.RespondError(w, http.StatusUnauthorized, "unauthorized")
@@ -55,7 +55,7 @@ func (h *Handler) handleListUserEvents(w http.ResponseWriter, r *http.Request) {
 
 	// ─── Fetch Corresponding Events ──────────────────────────────────────
 
-	events, err := h.eventStore.ListEvents(ctx, domain.EventFilter{UserID: &userID})
+	events, err := h.eventStore.ListEvents(ctx, domain.EventFilter{UserID: &uid})
 	if err != nil {
 		util.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
@@ -78,8 +78,8 @@ func (h *Handler) handleListUserTickets(w http.ResponseWriter, r *http.Request) 
 
 	// ─── Parse Param And Header ──────────────────────────────────────────
 
-	userIDStr := r.PathValue("id")
-	userID, err := uuid.Parse(userIDStr)
+	uidString := r.PathValue("id")
+	uid, err := uuid.Parse(uidString)
 	if err != nil {
 		util.RespondError(w, http.StatusBadRequest, "invalid user id")
 		return
@@ -93,14 +93,14 @@ func (h *Handler) handleListUserTickets(w http.ResponseWriter, r *http.Request) 
 
 	// ─── Check User Authentication ───────────────────────────────────────
 
-	if claims.UserID != userID {
+	if claims.UserID != uid {
 		util.RespondError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
 	ctx := r.Context()
 
-	user, err := h.userStore.GetUserByID(ctx, userID)
+	user, err := h.userStore.GetUserByID(ctx, uid)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			util.RespondError(w, http.StatusUnauthorized, "unauthorized")
@@ -117,7 +117,7 @@ func (h *Handler) handleListUserTickets(w http.ResponseWriter, r *http.Request) 
 
 	// ─── Fetch Corresponding Tickets ─────────────────────────────────────
 
-	tickets, err := h.ticketStore.ListTickets(ctx, domain.TicketFilter{UserID: &userID, Status: domain.TicketStatusConfirmed})
+	tickets, err := h.ticketStore.ListTickets(ctx, domain.TicketFilter{UserID: &uid, Status: domain.TicketStatusConfirmed})
 	if err != nil {
 		util.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
