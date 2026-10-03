@@ -12,6 +12,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // ─── Overall Test Structure ──────────────────────────────────────────────────
@@ -26,6 +28,22 @@ type apiTest struct {
 	expectedBody   string
 	setup          func(t *testing.T, s *store.MemoryStore, j *MockJWT)
 }
+
+// ─── Test UUIDs ──────────────────────────────────────────────────────────────
+
+var (
+	userIDJane        = uuid.MustParse("00000000-0000-0000-0000-000000000001")
+	userIDJohn        = uuid.MustParse("00000000-0000-0000-0000-000000000003")
+	userIDAlexandrina = uuid.MustParse("00000000-0000-0000-0000-000000000002")
+	eventID1          = uuid.MustParse("00000000-0000-0000-0000-000000000010")
+	eventID2          = uuid.MustParse("00000000-0000-0000-0000-000000000020")
+	eventIDSoldOut    = uuid.MustParse("00000000-0000-0000-0000-000000000030")
+	eventIDDraft      = uuid.MustParse("00000000-0000-0000-0000-000000000040")
+	eventIDCancelled  = uuid.MustParse("00000000-0000-0000-0000-000000000050")
+	ticketID1         = uuid.MustParse("00000000-0000-0000-0000-000000000100")
+	ticketIDReserved  = uuid.MustParse("00000000-0000-0000-0000-000000000200")
+	ticketIDExpired   = uuid.MustParse("00000000-0000-0000-0000-000000000300")
+)
 
 // ─── Test Helpers & Runners ──────────────────────────────────────────────────
 
@@ -74,6 +92,9 @@ func testRoutesInMemory(t *testing.T, tts []apiTest) {
 			rec := httptest.NewRecorder()
 
 			req.Header.Set("Content-Type", "application/json")
+			for k, v := range tt.headers {
+				req.Header.Set(k, v)
+			}
 
 			s.ServeHTTP(rec, req)
 
@@ -116,6 +137,9 @@ func testRoutesHTTP(t *testing.T, tts []apiTest) {
 			}
 
 			req.Header.Set("Content-Type", "application/json")
+			for k, v := range tt.headers {
+				req.Header.Set(k, v)
+			}
 
 			resp, err := client.Do(req)
 			if err != nil {

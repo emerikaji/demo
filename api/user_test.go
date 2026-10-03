@@ -9,18 +9,6 @@ import (
 
 	"demo/domain"
 	"demo/store"
-
-	"github.com/google/uuid"
-)
-
-// Static User UUIDs for deterministic path parameters
-var (
-	userIDJane        = uuid.MustParse("00000000-0000-0000-0000-000000000001")
-	userIDAlexandrina = uuid.MustParse("00000000-0000-0000-0000-000000000002")
-	eventID1          = uuid.MustParse("00000000-0000-0000-0000-000000000010")
-	eventIDDraft      = uuid.MustParse("00000000-0000-0000-0000-000000000020")
-	ticketID1         = uuid.MustParse("00000000-0000-0000-0000-000000000100")
-	ticketIDReserved  = uuid.MustParse("00000000-0000-0000-0000-000000000200")
 )
 
 // ─── Test Battery ────────────────────────────────────────────────────────────
