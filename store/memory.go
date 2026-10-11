@@ -1,7 +1,9 @@
 package store
 
 import (
+	"bytes"
 	"context"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -132,6 +134,8 @@ func (s *MemoryStore) CreateEvent(ctx context.Context, event *domain.Event) erro
 		return domain.ErrConflict
 	}
 
+	event.RemainingTickets = event.Capacity
+
 	copied := *event
 	s.events[event.ID] = &copied
 	return nil
@@ -165,6 +169,19 @@ func (s *MemoryStore) UpdateEvent(ctx context.Context, updated *domain.Event) er
 	return nil
 }
 
+func (s *MemoryStore) DeleteEventDraft(ctx context.Context, id uuid.UUID) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	_, exists := s.events[id]
+	if !exists {
+		return domain.ErrNotFound
+	}
+
+	delete(s.events, id)
+	return nil
+}
+
 func (s *MemoryStore) GetEvent(ctx context.Context, id uuid.UUID) (*domain.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -187,10 +204,11 @@ func (s *MemoryStore) ListEvents(ctx context.Context, filter domain.EventFilter)
 
 	for _, event := range s.events {
 		// Filter by status if requested
-		if filter.Status != nil && event.Status != *filter.Status {
+		if filter.Status != "" && event.Status != filter.Status {
 			continue
 		}
 
+		// Filter by ID if requested
 		if filter.UserID != nil && event.OrganizerID != *filter.UserID {
 			continue
 		}
@@ -210,10 +228,23 @@ func (s *MemoryStore) ListEvents(ctx context.Context, filter domain.EventFilter)
 		result = append(result, &copied)
 	}
 
+	sort.Slice(result, func(i, j int) bool {
+		return bytes.Compare(result[i].ID[:], result[j].ID[:]) < 0
+	})
+
 	return result, nil
 }
 
 // ─── TicketRepository ────────────────────────────────────────────────────────
+
+func (s *MemoryStore) expireStaleReservations(ctx context.Context) {
+	now := time.Now()
+	for _, ticket := range s.tickets {
+		if ticket.Status == domain.TicketStatusReserved && now.After(ticket.ExpiresAt) {
+			s.CancelReservation(ctx, ticket)
+		}
+	}
+}
 
 func (s *MemoryStore) ReserveTicket(ctx context.Context, ticket *domain.Ticket) error {
 	s.mu.Lock()
@@ -236,37 +267,29 @@ func (s *MemoryStore) ReserveTicket(ctx context.Context, ticket *domain.Ticket) 
 	return nil
 }
 
-func (s *MemoryStore) ConfirmReservation(ctx context.Context, ticketID uuid.UUID) error {
+func (s *MemoryStore) ConfirmReservation(ctx context.Context, ticket *domain.Ticket) error {
+	s.expireStaleReservations(ctx)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	ticket, exists := s.tickets[ticketID]
-	if !exists {
-		return domain.ErrNotFound
-	}
-
-	if time.Now().After(ticket.ExpiresAt) && ticket.Status == domain.TicketStatusReserved {
+	if s.tickets[ticket.ID].Status == domain.TicketStatusCancelled {
 		return domain.ErrTicketExpired
 	}
 
-	ticket.Status = domain.TicketStatusConfirmed
+	s.tickets[ticket.ID].Status = domain.TicketStatusConfirmed
+
 	return nil
 }
 
-func (s *MemoryStore) CancelReservation(ctx context.Context, ticketID uuid.UUID) error {
+func (s *MemoryStore) CancelReservation(ctx context.Context, ticket *domain.Ticket) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	ticket, exists := s.tickets[ticketID]
-	if !exists {
-		return domain.ErrNotFound
-	}
-
 	if ticket.Status == domain.TicketStatusCancelled {
-		return nil // Idempotent
+		return nil
 	}
 
-	ticket.Status = domain.TicketStatusCancelled
+	s.tickets[ticket.ID].Status = domain.TicketStatusCancelled
 
 	// Restore capacity
 	if event, exists := s.events[ticket.EventID]; exists {
@@ -277,6 +300,7 @@ func (s *MemoryStore) CancelReservation(ctx context.Context, ticketID uuid.UUID)
 }
 
 func (s *MemoryStore) GetTicket(ctx context.Context, id uuid.UUID) (*domain.Ticket, error) {
+	s.expireStaleReservations(ctx)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -289,26 +313,43 @@ func (s *MemoryStore) GetTicket(ctx context.Context, id uuid.UUID) (*domain.Tick
 	return &copied, nil
 }
 
-func (s *MemoryStore) ListUserTickets(ctx context.Context, userID uuid.UUID, limit, offset int) ([]*domain.Ticket, error) {
+func (s *MemoryStore) ListTickets(ctx context.Context, filter domain.TicketFilter) ([]*domain.Ticket, error) {
+	s.expireStaleReservations(ctx)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	var result []*domain.Ticket
-	i := 0
+	skipped := 0
+
 	for _, ticket := range s.tickets {
-		if ticket.UserID != userID {
+		// Filter by status if requested
+		if filter.Status != "" && ticket.Status != filter.Status {
 			continue
 		}
-		if i < offset {
-			i++
+
+		// Filter by ID if requested
+		if filter.UserID != nil && ticket.UserID != *filter.UserID {
 			continue
 		}
-		if len(result) >= limit {
+
+		// Apply pagination offset
+		if skipped < filter.Offset {
+			skipped++
+			continue
+		}
+
+		// Apply pagination limit
+		if filter.Limit > 0 && len(result) >= filter.Limit {
 			break
 		}
+
 		copied := *ticket
 		result = append(result, &copied)
 	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return bytes.Compare(result[i].ID[:], result[j].ID[:]) < 0
+	})
 
 	return result, nil
 }

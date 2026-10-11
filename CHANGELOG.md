@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 11/09/2026
+
+### Added
+
+- `user` routes.
+- `event` routes.
+- `ticket` routes.
+
+### Changed
+
+- Getting tickets from the datastore now works similarly to events with a filter struct.
+- Events that are in draft status won't be canceled but deleted outright.
+- Ticket capacity is now fully managed by the datastore and not the outfacing API.
+
+### Fixed
+
+- Reservations never expired. Expiration is now checked when getting, listing or confirming tickets.
+
 ## [0.1.0] - 28/09/2026
 
 ### Added

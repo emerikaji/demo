@@ -70,8 +70,12 @@ type Ticket struct {
 	EventID   uuid.UUID    `json:"event_id"`
 	UserID    uuid.UUID    `json:"user_id"`
 	Status    TicketStatus `json:"status"`
-	ExpiresAt time.Time    `json:"expires_at"` // Reservation TTL
+	ExpiresAt time.Time    `json:"-"` // Reservation TTL, should not show
 	CreatedAt time.Time    `json:"created_at"`
+}
+
+type Reservation struct {
+	EventID uuid.UUID `json:"event_id"`
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

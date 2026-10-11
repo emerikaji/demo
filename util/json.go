@@ -3,9 +3,16 @@ package util
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
+)
+
+var (
+	ErrEmptyBody       = errors.New("body is empty")
+	ErrBodyTooLarge    = errors.New("body too large")
+	ErrInvalidJSON     = errors.New("body contains invalid JSON")
+	ErrInvalidJSONType = errors.New("body contains invalid JSON type")
+	ErrJSONValues      = errors.New("body contains more than one JSON value")
 )
 
 // Map wraps into a type the typical structure of JSON
@@ -42,22 +49,19 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 
 		switch {
 		case errors.As(err, &syntaxError):
-			return fmt.Errorf("body contains badly-formed JSON (at character %d)", syntaxError.Offset)
+			return ErrInvalidJSON
 
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			return errors.New("body contains badly-formed JSON")
+			return ErrInvalidJSON
 
 		case errors.As(err, &unmarshalTypeError):
-			if unmarshalTypeError.Field != "" {
-				return fmt.Errorf("body contains incorrect JSON type for field %q", unmarshalTypeError.Field)
-			}
-			return fmt.Errorf("body contains incorrect JSON type (at character %d)", unmarshalTypeError.Offset)
+			return ErrInvalidJSONType
 
 		case errors.Is(err, io.EOF):
-			return errors.New("body must not be empty")
+			return ErrEmptyBody
 
 		case err.Error() == "http: request body too large":
-			return fmt.Errorf("body must not exceed %d bytes", maxBytes)
+			return ErrBodyTooLarge
 
 		default:
 			return err
@@ -66,7 +70,7 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 
 	// Ensure there is only one JSON object in the stream
 	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
-		return errors.New("body must only contain a single JSON value")
+		return ErrJSONValues
 	}
 
 	return nil

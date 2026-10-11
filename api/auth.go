@@ -27,11 +27,30 @@ type loginUserRequest struct {
 
 // ─── Auth Routes ─────────────────────────────────────────────────────────────
 
-// handleRegisterUser : /v1/auth/register
+// handleRegisterUser : POST /v1/auth/register
 func (h *Handler) handleRegisterUser(w http.ResponseWriter, r *http.Request) {
+
+	// ─── Decode And Check Request ────────────────────────────────────────
+
 	var req registerUserRequest
 	if err := util.DecodeJSON(w, r, &req); err != nil {
-		util.RespondError(w, http.StatusBadRequest, err.Error())
+		if errors.Is(err, util.ErrEmptyBody) {
+			util.RespondError(w, http.StatusBadRequest, "body must not be empty")
+			return
+		}
+		if errors.Is(err, util.ErrJSONValues) {
+			util.RespondError(w, http.StatusBadRequest, "body cannot contain more than one json value")
+			return
+		}
+		if errors.Is(err, util.ErrInvalidJSON) {
+			util.RespondError(w, http.StatusBadRequest, "invalid json")
+			return
+		}
+		if errors.Is(err, util.ErrInvalidJSONType) {
+			util.RespondError(w, http.StatusBadRequest, "invalid json types")
+			return
+		}
+		util.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -47,6 +66,8 @@ func (h *Handler) handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 		util.RespondError(w, http.StatusBadRequest, "invalid role: must be 'organizer' or 'attendee'")
 		return
 	}
+
+	// ─── Create User ─────────────────────────────────────────────────────
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -70,16 +91,37 @@ func (h *Handler) handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// ─── Respond With Status Created ─────────────────────────────────────
+
 	_ = util.EncodeJSON(w, http.StatusCreated, util.Map{
 		"message": "user registered successfully",
 	})
 }
 
-// handleLoginUser : /v1/auth/login
+// handleLoginUser : POST /v1/auth/login
 func (h *Handler) handleLoginUser(w http.ResponseWriter, r *http.Request) {
+
+	// ─── Decode And Check Request ────────────────────────────────────────
+
 	var req loginUserRequest
 	if err := util.DecodeJSON(w, r, &req); err != nil {
-		util.RespondError(w, http.StatusBadRequest, err.Error())
+		if errors.Is(err, util.ErrEmptyBody) {
+			util.RespondError(w, http.StatusBadRequest, "body must not be empty")
+			return
+		}
+		if errors.Is(err, util.ErrJSONValues) {
+			util.RespondError(w, http.StatusBadRequest, "body cannot contain more than one json value")
+			return
+		}
+		if errors.Is(err, util.ErrInvalidJSON) {
+			util.RespondError(w, http.StatusBadRequest, "invalid json")
+			return
+		}
+		if errors.Is(err, util.ErrInvalidJSONType) {
+			util.RespondError(w, http.StatusBadRequest, "invalid json types")
+			return
+		}
+		util.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -90,6 +132,8 @@ func (h *Handler) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		util.RespondError(w, http.StatusBadRequest, "email and password are required")
 		return
 	}
+
+	// ─── Authentify User If Exists ───────────────────────────────────────
 
 	user, err := h.userStore.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
@@ -111,6 +155,8 @@ func (h *Handler) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 		util.RespondError(w, http.StatusInternalServerError, "failed to generate access token")
 		return
 	}
+
+	// ─── Respond With Status OK ──────────────────────────────────────────
 
 	_ = util.EncodeJSON(w, http.StatusOK, util.Map{
 		"token": token,
