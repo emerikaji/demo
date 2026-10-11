@@ -62,7 +62,7 @@ var ticketTests = []apiTest{
 		method:         http.MethodGet,
 		headers:        map[string]string{"Authorization": "Bearer valid-token-for-alexandrina"},
 		expectedStatus: http.StatusForbidden,
-		expectedBody:   `{"error":"forbidden: ticket does not belong to user"}`,
+		expectedBody:   `{"error":"you do not own this ticket"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDAlexandrina
@@ -115,7 +115,7 @@ var ticketTests = []apiTest{
 		method:         http.MethodGet,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		expectedStatus: http.StatusForbidden,
-		expectedBody:   `{"error":"forbidden: attendee role required"}`,
+		expectedBody:   `{"error":"attendee role required"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJane
@@ -136,7 +136,7 @@ var ticketTests = []apiTest{
 		method:         http.MethodGet,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		expectedStatus: http.StatusOK,
-		expectedBody:   fmt.Sprintf(`{"id":"%s","event_id":"%s","user_id":"%s","status":"confirmed","created_at":"2026-10-01T12:00:00Z"}`, ticketID1, eventID1, userIDJane),
+		expectedBody:   fmt.Sprintf(`{"ticket":{"id":"%s","event_id":"%s","user_id":"%s","status":"confirmed","created_at":"2026-10-01T12:00:00Z"}}`, ticketID1, eventID1, userIDJane),
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJane
@@ -180,7 +180,7 @@ var ticketTests = []apiTest{
 		method:         http.MethodGet,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		expectedStatus: http.StatusOK,
-		expectedBody:   fmt.Sprintf(`{"id":"%s","event_id":"%s","user_id":"%s","status":"reserved","created_at":"2026-10-01T12:00:00Z"}`, ticketIDReserved, eventID1, userIDJane),
+		expectedBody:   fmt.Sprintf(`{"ticket":{"id":"%s","event_id":"%s","user_id":"%s","status":"reserved","created_at":"2026-10-01T12:00:00Z"}}`, ticketIDReserved, eventID1, userIDJane),
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJane
@@ -240,6 +240,15 @@ var ticketTests = []apiTest{
 		expectedBody:   `{"error":"body must not be empty"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			j.returnClaims.UserID = userIDJane
+
+			err := s.CreateUser(context.Background(), &domain.User{
+				ID:    userIDJane,
+				Email: "janedoe@example.com",
+				Role:  domain.RoleAttendee,
+			})
+			if err != nil {
+				t.Fatalf("failed to seed user: %v", err)
+			}
 		},
 	},
 	{
@@ -249,9 +258,18 @@ var ticketTests = []apiTest{
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		body:           []byte(`{}`),
 		expectedStatus: http.StatusBadRequest,
-		expectedBody:   `{"error":"event_id is required"}`,
+		expectedBody:   `{"error":"event id is required"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			j.returnClaims.UserID = userIDJane
+
+			err := s.CreateUser(context.Background(), &domain.User{
+				ID:    userIDJane,
+				Email: "janedoe@example.com",
+				Role:  domain.RoleAttendee,
+			})
+			if err != nil {
+				t.Fatalf("failed to seed user: %v", err)
+			}
 		},
 	},
 	{
@@ -261,7 +279,7 @@ var ticketTests = []apiTest{
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		body:           []byte(fmt.Sprintf(`{"event_id":"%s"}`, eventID1)),
 		expectedStatus: http.StatusForbidden,
-		expectedBody:   `{"error":"forbidden: attendee role required"}`,
+		expectedBody:   `{"error":"attendee role required"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJane
@@ -320,15 +338,21 @@ var ticketTests = []apiTest{
 			}
 
 			err = s.CreateEvent(ctx, &domain.Event{
-				ID:               eventIDSoldOut,
-				OrganizerID:      uuid.New(),
-				Title:            "Sold Out Concert",
-				Capacity:         10,
-				RemainingTickets: 0,
-				Status:           domain.EventStatusPublished,
+				ID:          eventIDSoldOut,
+				OrganizerID: uuid.New(),
+				Title:       "Sold Out Concert",
+				Capacity:    5,
+				Status:      domain.EventStatusPublished,
 			})
 			if err != nil {
 				t.Fatalf("failed to seed sold out event: %v", err)
+			}
+			for range 5 {
+				_ = s.ReserveTicket(ctx, &domain.Ticket{
+					ID:      uuid.New(),
+					EventID: eventIDSoldOut,
+					Status:  domain.TicketStatusReserved,
+				})
 			}
 		},
 	},
@@ -339,7 +363,7 @@ var ticketTests = []apiTest{
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		body:           []byte(fmt.Sprintf(`{"id":"%s","event_id":"%s","created_at":"2026-10-01T12:00:00Z"}`, ticketIDReserved, eventID1)),
 		expectedStatus: http.StatusCreated,
-		expectedBody:   fmt.Sprintf(`{"id":"%s","event_id":"%s","user_id":"%s","status":"reserved","created_at":"2026-10-01T12:00:00Z"}`, ticketIDReserved, eventID1, userIDJane),
+		expectedBody:   `{"message":"reservation created successfully"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJane
@@ -412,7 +436,7 @@ var ticketTests = []apiTest{
 		method:         http.MethodPost,
 		headers:        map[string]string{"Authorization": "Bearer valid-token-for-alexandrina"},
 		expectedStatus: http.StatusForbidden,
-		expectedBody:   `{"error":"forbidden: ticket does not belong to user"}`,
+		expectedBody:   `{"error":"you do not own this ticket"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDAlexandrina
@@ -424,6 +448,15 @@ var ticketTests = []apiTest{
 			})
 			if err != nil {
 				t.Fatalf("failed to seed user: %v", err)
+			}
+
+			err = s.CreateUser(ctx, &domain.User{
+				ID:    userIDAlexandrina,
+				Email: "alexandrina@example.com",
+				Role:  domain.RoleAttendee,
+			})
+			if err != nil {
+				t.Fatalf("failed to seed second user: %v", err)
 			}
 
 			err = s.CreateEvent(ctx, &domain.Event{
@@ -497,12 +530,12 @@ var ticketTests = []apiTest{
 		},
 	},
 	{
-		name:           "confirm reservation - successful confirmation should return 200 with confirmed ticket",
+		name:           "confirm reservation - successful confirmation should return 200",
 		route:          fmt.Sprintf("/v1/tickets/%s", ticketIDReserved),
 		method:         http.MethodPost,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		expectedStatus: http.StatusOK,
-		expectedBody:   fmt.Sprintf(`{"id":"%s","event_id":"%s","user_id":"%s","status":"confirmed","created_at":"2026-10-01T12:00:00Z"}`, ticketIDReserved, eventID1, userIDJane),
+		expectedBody:   `{"message":"reservation confirmed successfully"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJane
@@ -587,10 +620,64 @@ var ticketTests = []apiTest{
 		method:         http.MethodDelete,
 		headers:        map[string]string{"Authorization": "Bearer valid-token-for-alexandrina"},
 		expectedStatus: http.StatusForbidden,
-		expectedBody:   `{"error":"forbidden: ticket does not belong to user"}`,
+		expectedBody:   `{"error":"you do not own this ticket"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDAlexandrina
+
+			err := s.CreateUser(ctx, &domain.User{
+				ID:    userIDJane,
+				Email: "janedoe@example.com",
+				Role:  domain.RoleAttendee,
+			})
+			if err != nil {
+				t.Fatalf("failed to seed user: %v", err)
+			}
+
+			err = s.CreateUser(ctx, &domain.User{
+				ID:    userIDAlexandrina,
+				Email: "alexandrina@example.com",
+				Role:  domain.RoleAttendee,
+			})
+			if err != nil {
+				t.Fatalf("failed to seed second user: %v", err)
+			}
+
+			err = s.CreateEvent(ctx, &domain.Event{
+				ID:               eventID1,
+				OrganizerID:      uuid.New(),
+				Title:            "GolangConf 2026",
+				Capacity:         100,
+				RemainingTickets: 100,
+				Status:           domain.EventStatusPublished,
+			})
+			if err != nil {
+				t.Fatalf("failed to seed event: %v", err)
+			}
+
+			err = s.ReserveTicket(ctx, &domain.Ticket{
+				ID:        ticketIDReserved,
+				EventID:   eventID1,
+				UserID:    userIDJane,
+				Status:    domain.TicketStatusReserved,
+				ExpiresAt: time.Now().Add(15 * time.Minute),
+				CreatedAt: time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC),
+			})
+			if err != nil {
+				t.Fatalf("failed to seed ticket: %v", err)
+			}
+		},
+	},
+	{
+		name:           "cancel reservation - successful cancellation should return 200",
+		route:          fmt.Sprintf("/v1/tickets/%s", ticketIDReserved),
+		method:         http.MethodDelete,
+		headers:        map[string]string{"Authorization": "Bearer valid-token"},
+		expectedStatus: http.StatusOK,
+		expectedBody:   `{"message":"reservation cancelled successfully"}`,
+		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
+			ctx := context.Background()
+			j.returnClaims.UserID = userIDJane
 
 			err := s.CreateUser(ctx, &domain.User{
 				ID:    userIDJane,
@@ -627,12 +714,12 @@ var ticketTests = []apiTest{
 		},
 	},
 	{
-		name:           "cancel reservation - successful cancellation should return 200 with cancelled ticket",
-		route:          fmt.Sprintf("/v1/tickets/%s", ticketIDReserved),
+		name:           "cancel reservation - successful deletion should return 200",
+		route:          fmt.Sprintf("/v1/tickets/%s", ticketID1),
 		method:         http.MethodDelete,
 		headers:        map[string]string{"Authorization": "Bearer valid-token"},
 		expectedStatus: http.StatusOK,
-		expectedBody:   fmt.Sprintf(`{"id":"%s","event_id":"%s","user_id":"%s","status":"cancelled","created_at":"2026-10-01T12:00:00Z"}`, ticketIDReserved, eventID1, userIDJane),
+		expectedBody:   `{"message":"ticket deleted successfully"}`,
 		setup: func(t *testing.T, s *store.MemoryStore, j *MockJWT) {
 			ctx := context.Background()
 			j.returnClaims.UserID = userIDJane
@@ -659,10 +746,10 @@ var ticketTests = []apiTest{
 			}
 
 			err = s.ReserveTicket(ctx, &domain.Ticket{
-				ID:        ticketIDReserved,
+				ID:        ticketID1,
 				EventID:   eventID1,
 				UserID:    userIDJane,
-				Status:    domain.TicketStatusReserved,
+				Status:    domain.TicketStatusConfirmed,
 				ExpiresAt: time.Now().Add(15 * time.Minute),
 				CreatedAt: time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC),
 			})

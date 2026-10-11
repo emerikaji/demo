@@ -237,6 +237,15 @@ func (s *MemoryStore) ListEvents(ctx context.Context, filter domain.EventFilter)
 
 // ─── TicketRepository ────────────────────────────────────────────────────────
 
+func (s *MemoryStore) expireStaleReservations(ctx context.Context) {
+	now := time.Now()
+	for _, ticket := range s.tickets {
+		if ticket.Status == domain.TicketStatusReserved && now.After(ticket.ExpiresAt) {
+			s.CancelReservation(ctx, ticket)
+		}
+	}
+}
+
 func (s *MemoryStore) ReserveTicket(ctx context.Context, ticket *domain.Ticket) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -258,34 +267,26 @@ func (s *MemoryStore) ReserveTicket(ctx context.Context, ticket *domain.Ticket) 
 	return nil
 }
 
-func (s *MemoryStore) ConfirmReservation(ctx context.Context, ticketID uuid.UUID) error {
+func (s *MemoryStore) ConfirmReservation(ctx context.Context, ticket *domain.Ticket) error {
+	s.expireStaleReservations(ctx)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	ticket, exists := s.tickets[ticketID]
-	if !exists {
-		return domain.ErrNotFound
-	}
-
-	if time.Now().After(ticket.ExpiresAt) && ticket.Status == domain.TicketStatusReserved {
+	if ticket.Status == domain.TicketStatusCancelled {
 		return domain.ErrTicketExpired
 	}
 
 	ticket.Status = domain.TicketStatusConfirmed
+
 	return nil
 }
 
-func (s *MemoryStore) CancelReservation(ctx context.Context, ticketID uuid.UUID) error {
+func (s *MemoryStore) CancelReservation(ctx context.Context, ticket *domain.Ticket) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	ticket, exists := s.tickets[ticketID]
-	if !exists {
-		return domain.ErrNotFound
-	}
-
 	if ticket.Status == domain.TicketStatusCancelled {
-		return nil // Idempotent
+		return nil
 	}
 
 	ticket.Status = domain.TicketStatusCancelled
@@ -299,6 +300,7 @@ func (s *MemoryStore) CancelReservation(ctx context.Context, ticketID uuid.UUID)
 }
 
 func (s *MemoryStore) GetTicket(ctx context.Context, id uuid.UUID) (*domain.Ticket, error) {
+	s.expireStaleReservations(ctx)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -312,6 +314,7 @@ func (s *MemoryStore) GetTicket(ctx context.Context, id uuid.UUID) (*domain.Tick
 }
 
 func (s *MemoryStore) ListTickets(ctx context.Context, filter domain.TicketFilter) ([]*domain.Ticket, error) {
+	s.expireStaleReservations(ctx)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

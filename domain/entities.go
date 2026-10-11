@@ -74,4 +74,8 @@ type Ticket struct {
 	CreatedAt time.Time    `json:"created_at"`
 }
 
+type Reservation struct {
+	EventID uuid.UUID `json:"event_id"`
+}
+
 // ─────────────────────────────────────────────────────────────────────────────

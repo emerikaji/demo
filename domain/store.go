@@ -59,8 +59,8 @@ type TicketFilter struct {
 
 type TicketRepository interface {
 	ReserveTicket(ctx context.Context, ticket *Ticket) error
-	ConfirmReservation(ctx context.Context, ticketID uuid.UUID) error
-	CancelReservation(ctx context.Context, ticketID uuid.UUID) error
+	ConfirmReservation(ctx context.Context, ticket *Ticket) error
+	CancelReservation(ctx context.Context, ticket *Ticket) error
 	GetTicket(ctx context.Context, id uuid.UUID) (*Ticket, error)
 	ListTickets(ctx context.Context, filter TicketFilter) ([]*Ticket, error)
 }
