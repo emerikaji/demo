@@ -19,3 +19,6 @@
 !*.go
 !**/
 !**/*.go
+
+# Other files
+!api/public/*

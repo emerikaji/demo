@@ -22,6 +22,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// ─── API Server ──────────────────────────────────────────────────────
+
 	memStore := store.NewMemoryStore()
 
 	h := api.New(memStore, memStore, memStore, util.NewJWT("test secret")) // TODO get secret from outside
@@ -30,19 +32,19 @@ func main() {
 
 	g, gCtx := errgroup.WithContext(ctx)
 
-	log.Println("Server starting...")
+	log.Println("API Server starting...")
 
 	g.Go(func() error {
 		return apiServer.Start(gCtx)
 	})
 
-	log.Println("Server accepting connections.")
+	log.Println("API Server accepting connections.")
 
 	if err := g.Wait(); err != nil && !errors.Is(err, context.Canceled) {
-		log.Fatalf("Server error: %v", err)
+		log.Fatalf("API Server error: %v", err)
 	}
 
-	log.Println("Server stopped gracefully.")
+	log.Println("All servers stopped gracefully.")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

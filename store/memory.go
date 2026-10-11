@@ -199,8 +199,7 @@ func (s *MemoryStore) ListEvents(ctx context.Context, filter domain.EventFilter)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var result []*domain.Event
-	skipped := 0
+	var matching []*domain.Event
 
 	for _, event := range s.events {
 		// Filter by status if requested
@@ -208,29 +207,32 @@ func (s *MemoryStore) ListEvents(ctx context.Context, filter domain.EventFilter)
 			continue
 		}
 
-		// Filter by ID if requested
+		// Filter by User ID if requested
 		if filter.UserID != nil && event.OrganizerID != *filter.UserID {
 			continue
 		}
 
-		// Apply pagination offset
-		if skipped < filter.Offset {
-			skipped++
-			continue
-		}
-
-		// Apply pagination limit
-		if filter.Limit > 0 && len(result) >= filter.Limit {
-			break
-		}
-
 		copied := *event
-		result = append(result, &copied)
+		matching = append(matching, &copied)
 	}
 
-	sort.Slice(result, func(i, j int) bool {
-		return bytes.Compare(result[i].ID[:], result[j].ID[:]) < 0
+	sort.Slice(matching, func(i, j int) bool {
+		return bytes.Compare(matching[i].ID[:], matching[j].ID[:]) < 0
 	})
+
+	start := min(filter.Offset, len(matching))
+	end := len(matching)
+
+	if filter.Limit > 0 {
+		if start+filter.Limit < end {
+			end = start + filter.Limit
+		}
+	}
+
+	result := matching[start:end]
+	if result == nil {
+		result = []*domain.Event{}
+	}
 
 	return result, nil
 }

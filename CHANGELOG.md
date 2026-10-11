@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 11/09/2026
+
+### Added
+
+- `swagger.yaml` route to get the OpenAPI specification.
+
+### Fixed
+
+- Event sorting was inconsistent when the limit was hit. The in-memory store now sorts first then applies pagination.
+
 ## [0.2.0] - 11/09/2026
 
 ### Added
