@@ -34,7 +34,23 @@ func (h *Handler) handleRegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	var req registerUserRequest
 	if err := util.DecodeJSON(w, r, &req); err != nil {
-		util.RespondError(w, http.StatusBadRequest, err.Error())
+		if errors.Is(err, util.ErrEmptyBody) {
+			util.RespondError(w, http.StatusBadRequest, "body must not be empty")
+			return
+		}
+		if errors.Is(err, util.ErrJSONValues) {
+			util.RespondError(w, http.StatusBadRequest, "body cannot contain more than one json value")
+			return
+		}
+		if errors.Is(err, util.ErrInvalidJSON) {
+			util.RespondError(w, http.StatusBadRequest, "invalid json")
+			return
+		}
+		if errors.Is(err, util.ErrInvalidJSONType) {
+			util.RespondError(w, http.StatusBadRequest, "invalid json types")
+			return
+		}
+		util.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -89,7 +105,23 @@ func (h *Handler) handleLoginUser(w http.ResponseWriter, r *http.Request) {
 
 	var req loginUserRequest
 	if err := util.DecodeJSON(w, r, &req); err != nil {
-		util.RespondError(w, http.StatusBadRequest, err.Error())
+		if errors.Is(err, util.ErrEmptyBody) {
+			util.RespondError(w, http.StatusBadRequest, "body must not be empty")
+			return
+		}
+		if errors.Is(err, util.ErrJSONValues) {
+			util.RespondError(w, http.StatusBadRequest, "body cannot contain more than one json value")
+			return
+		}
+		if errors.Is(err, util.ErrInvalidJSON) {
+			util.RespondError(w, http.StatusBadRequest, "invalid json")
+			return
+		}
+		if errors.Is(err, util.ErrInvalidJSONType) {
+			util.RespondError(w, http.StatusBadRequest, "invalid json types")
+			return
+		}
+		util.RespondError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
