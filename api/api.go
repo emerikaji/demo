@@ -61,6 +61,10 @@ func (h *Handler) Routes() map[string]http.HandlerFunc {
 		"POST /v1/tickets":        h.handleReserveTicket,
 		"POST /v1/tickets/{id}":   h.handleConfirmReservation,
 		"DELETE /v1/tickets/{id}": h.handleCancelReservation,
+
+		// ─── Swagger ─────────────────────────────────────────────────
+
+		"GET /v1/swagger.yaml": h.handleSpec,
 	}
 }
 
