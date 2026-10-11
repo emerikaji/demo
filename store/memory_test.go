@@ -230,12 +230,18 @@ func TestUpdateEvent(t *testing.T) {
 
 		// Initial capacity 10, remaining 2 -> 8 tickets issued/sold
 		event := &domain.Event{
-			ID:               uuid.New(),
-			Capacity:         10,
-			RemainingTickets: 2,
-			Status:           domain.EventStatusPublished,
+			ID:       uuid.New(),
+			Capacity: 10,
+			Status:   domain.EventStatusPublished,
 		}
 		_ = s.CreateEvent(ctx, event)
+		for range 8 {
+			ticket := &domain.Ticket{
+				ID:      uuid.New(),
+				EventID: event.ID,
+			}
+			_ = s.ReserveTicket(ctx, ticket)
+		}
 
 		// Attempt to reduce total capacity to 5 (less than 8 issued)
 		event.Capacity = 5
@@ -252,12 +258,18 @@ func TestUpdateEvent(t *testing.T) {
 
 		// 10 capacity, 2 remaining = 8 tickets issued
 		event := &domain.Event{
-			ID:               uuid.New(),
-			Capacity:         10,
-			RemainingTickets: 2,
-			Status:           domain.EventStatusPublished,
+			ID:       uuid.New(),
+			Capacity: 10,
+			Status:   domain.EventStatusPublished,
 		}
 		_ = s.CreateEvent(ctx, event)
+		for range 8 {
+			ticket := &domain.Ticket{
+				ID:      uuid.New(),
+				EventID: event.ID,
+			}
+			_ = s.ReserveTicket(ctx, ticket)
+		}
 
 		// Increase capacity to 20. Remaining should expand to 12 (20 total - 8 issued)
 		event.Capacity = 20
@@ -432,7 +444,7 @@ func TestTicketLifecycle(t *testing.T) {
 	}
 
 	// 3. Confirm Reservation
-	if err := s.ConfirmReservation(ctx, ticket.ID); err != nil {
+	if err := s.ConfirmReservation(ctx, ticket); err != nil {
 		t.Fatalf("failed to confirm ticket: %v", err)
 	}
 
@@ -442,7 +454,7 @@ func TestTicketLifecycle(t *testing.T) {
 	}
 
 	// 4. Cancel Reservation & Restore Capacity
-	if err := s.CancelReservation(ctx, ticket.ID); err != nil {
+	if err := s.CancelReservation(ctx, ticket); err != nil {
 		t.Fatalf("failed to cancel reservation: %v", err)
 	}
 
@@ -458,7 +470,7 @@ func TestConfirmExpiredTicket(t *testing.T) {
 	s := NewMemoryStore()
 	ctx := context.Background()
 
-	event := &domain.Event{ID: uuid.New(), Capacity: 10, RemainingTickets: 10}
+	event := &domain.Event{ID: uuid.New(), Capacity: 10}
 	_ = s.CreateEvent(ctx, event)
 
 	ticket := &domain.Ticket{
@@ -470,7 +482,7 @@ func TestConfirmExpiredTicket(t *testing.T) {
 	}
 	_ = s.ReserveTicket(ctx, ticket)
 
-	err := s.ConfirmReservation(ctx, ticket.ID)
+	err := s.ConfirmReservation(ctx, ticket)
 	if !errors.Is(err, domain.ErrTicketExpired) {
 		t.Errorf("expected ErrTicketExpired, got %v", err)
 	}

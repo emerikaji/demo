@@ -272,11 +272,11 @@ func (s *MemoryStore) ConfirmReservation(ctx context.Context, ticket *domain.Tic
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if ticket.Status == domain.TicketStatusCancelled {
+	if s.tickets[ticket.ID].Status == domain.TicketStatusCancelled {
 		return domain.ErrTicketExpired
 	}
 
-	ticket.Status = domain.TicketStatusConfirmed
+	s.tickets[ticket.ID].Status = domain.TicketStatusConfirmed
 
 	return nil
 }
@@ -289,7 +289,7 @@ func (s *MemoryStore) CancelReservation(ctx context.Context, ticket *domain.Tick
 		return nil
 	}
 
-	ticket.Status = domain.TicketStatusCancelled
+	s.tickets[ticket.ID].Status = domain.TicketStatusCancelled
 
 	// Restore capacity
 	if event, exists := s.events[ticket.EventID]; exists {
