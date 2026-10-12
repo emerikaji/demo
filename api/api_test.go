@@ -61,7 +61,7 @@ func (m MockJWT) Parse(tokenString string) (*util.CustomClaims, error) {
 	return &m.returnClaims, m.returnErr
 }
 
-func setupTestServer(t *testing.T, tt apiTest) *server.Server {
+func setupTestServer(t *testing.T, tt apiTest) *http.Server {
 	t.Helper()
 
 	memStore := store.NewMemoryStore()
@@ -96,7 +96,7 @@ func testRoutesInMemory(t *testing.T, tts []apiTest) {
 				req.Header.Set(k, v)
 			}
 
-			s.ServeHTTP(rec, req)
+			s.Handler.ServeHTTP(rec, req)
 
 			if rec.Code != tt.expectedStatus {
 				t.Errorf("got status %d, want %d", rec.Code, tt.expectedStatus)
@@ -118,7 +118,7 @@ func testRoutesHTTP(t *testing.T, tts []apiTest) {
 			t.Parallel()
 
 			s := setupTestServer(t, tt)
-			ts := httptest.NewTestServer(t, s)
+			ts := httptest.NewTestServer(t, s.Handler)
 			ts.Start()
 			client := ts.Client()
 			url := ts.URL + tt.route

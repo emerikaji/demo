@@ -1,16 +1,10 @@
-# Containers demo
+# Container demo
 
-This is an API designed to illustrate my capabilities in working with Go, designing CI/CD pipelines, deploying with Docker and hosting behind Traefik.
+This is an API designed to illustrate my abilities in working with Go, designing CI/CD pipelines, deploying with Docker and hosting behind Traefik.
 
-It is available at [eaji.cc](https://eaji.cc), where you can already test the following API routes:
-- `GET /v1/health`
-- `POST /v1/auth/register`
-  - JSON body: `{"email": "example@email.com", "password": "securepass", "role":"attendee"}` (`role` should either be "attendee" or "organizer").
-- `POST /v1/auth/login`
-  - JSON body: `{"email": "example@email.com", "password": "securepass"}`
-  - JSON response: `"{"token": "a jwt token"}"`
+It is available at [eaji.cc](https://eaji.cc), with all routes and their specifications listed in the open API doc at [eaji.cc/v1/openapi.yaml](https://eaji.cc/v1/swagger.yaml). That spec can be viewed directly at [eaji.cc/v1/swagger](https://eaji.cc/v1/swagger).
 
-A full API doc will be done at a later time, as well as a proper home page on the root domain name, which will feature more information on the project itself. You can also check out the traefik dashboard that I willingly made public for demonstration purposes at [traefik.eaji.cc](https://traefik.eaji.cc).
+You can also check out the traefik dashboard that I willingly made public for demonstration purposes at [traefik.eaji.cc](https://traefik.eaji.cc).
 
 ## Project design
 

@@ -10,43 +10,45 @@ import (
 
 // ─── Server Generator ────────────────────────────────────────────────────────
 
-// Server wraps http.Server.
+// Server wraps http.Handler.
 type Server struct {
-	httpServer *http.Server
+	mux         *http.ServeMux
+	middlewares []func(w http.ResponseWriter, r *http.Request)
 }
 
 // ServeHTTP wraps the httpServer's method to implement the http.Handler interface.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.httpServer.Handler.ServeHTTP(w, r)
+	for _, middleware := range s.middlewares {
+		middleware(w, r)
+	}
+	s.mux.ServeHTTP(w, r)
 }
 
-// New is a Server generator that creates an http.Server with the provided address and an http.ServeMux handler.
+// New is a generator that creates an http.Server with the provided address and an http.ServeMux handler.
 // Each provided route is registered to the multiplexer.
-func New(addr string, routes map[string]http.HandlerFunc) *Server {
+func New(addr string, routes map[string]http.HandlerFunc, middlewares ...func(w http.ResponseWriter, r *http.Request)) *http.Server {
 	mux := http.NewServeMux()
 
 	for pattern, handler := range routes {
 		mux.HandleFunc(pattern, handler)
 	}
 
-	return &Server{
-		httpServer: &http.Server{
-			Addr:              addr,
-			Handler:           mux,
-			ReadHeaderTimeout: 3 * time.Second,
-			ReadTimeout:       5 * time.Second,
-			WriteTimeout:      10 * time.Second,
-			IdleTimeout:       120 * time.Second,
-		},
+	return &http.Server{
+		Addr:              addr,
+		Handler:           &Server{mux: mux, middlewares: middlewares},
+		ReadHeaderTimeout: 3 * time.Second,
+		ReadTimeout:       5 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 }
 
 // Start opens the server for connections and prepares for graceful shutdown once the provided context expires.
-func (s *Server) Start(ctx context.Context) error {
+func Start(ctx context.Context, s *http.Server) error {
 	errChan := make(chan error, 1)
 
 	go func() {
-		if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
 		}
 
@@ -60,7 +62,7 @@ func (s *Server) Start(ctx context.Context) error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		return s.httpServer.Shutdown(shutdownCtx)
+		return s.Shutdown(shutdownCtx)
 	}
 }
 
