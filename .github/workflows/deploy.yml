@@ -55,12 +55,14 @@ jobs:
 
       - name: Deploy on Server via SSH
         uses: appleboy/ssh-action@v1
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: JWT_SECRET=${{ secrets.JWT_SECRET }}
+          envs: JWT_SECRET
           script: |
             cd /var/www/demo
 
