@@ -2,7 +2,7 @@
 
 This is an API designed to illustrate my abilities in working with Go, designing CI/CD pipelines, deploying with Docker and hosting behind Traefik.
 
-It is available at [eaji.cc](https://eaji.cc), with all routes and their specifications listed in the open API doc at [eaji.cc/v1/swagger.yaml](https://eaji.cc/v1/swagger.yaml). That spec can be viewed directly at [eaji.cc/v1/swagger](https://eaji.cc/v1/swagger).
+It is available at [eaji.cc](https://eaji.cc), with all routes and their specifications listed in the open API doc at [eaji.cc/v1/openapi.yaml](https://eaji.cc/v1/swagger.yaml). That spec can be viewed directly at [eaji.cc/v1/swagger](https://eaji.cc/v1/swagger).
 
 You can also check out the traefik dashboard that I willingly made public for demonstration purposes at [traefik.eaji.cc](https://traefik.eaji.cc).
 
