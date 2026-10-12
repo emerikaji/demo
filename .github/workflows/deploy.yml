@@ -60,6 +60,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          envs: JWT_SECRET=${{ secrets.JWT_SECRET }}
           script: |
             cd /var/www/demo
 
@@ -68,7 +69,7 @@ jobs:
 
             # Pull pre-built image and restart service
             docker compose pull
-            JWT_SECRET=${{ secrets.JWT_SECRET }} docker compose up -d --remove-orphans
+            docker compose up -d --remove-orphans
 
             # Clean up old/unused images
             docker image prune -f
