@@ -7,11 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 12/09/2026
+
+### Added
+
+- `swagger` route to display the OpenAPI spec in Swagger UI. Uses the UNPKG CDN.
+- Compatibility for middlewares in the Server package.
+
+### Changed
+
+- Updated the server mechanism to return an http.Server directly.
+
 ## [0.3.0] - 11/09/2026
 
 ### Added
 
-- `swagger.yaml` route to get the OpenAPI specification.
+- `openapi.yaml` route to get the OpenAPI specification.
 
 ### Fixed
 

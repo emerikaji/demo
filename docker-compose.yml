@@ -10,18 +10,6 @@ services:
       - 'traefik.http.services.demo.loadbalancer.server.port=8080'
     restart: unless-stopped
 
-  swagger:
-    image: docker.swagger.io/swaggerapi/swagger-ui:latest
-    networks:
-      - traefik_public
-    environment:
-      - URL=https://eaji.cc/v1/swagger.yaml
-    labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.swagger.rule=Host(`eaji.cc`) && Path(`/v1/swagger`)'
-      - 'traefik.http.routers.swagger.entrypoints=websecure'
-      - 'traefik.http.services.swagger.loadbalancer.server.port=8080'
-
 networks:
   traefik_public:
     external: true

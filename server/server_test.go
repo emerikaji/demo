@@ -22,7 +22,7 @@ func TestNew(t *testing.T) {
 	}{
 		{
 			name: "registered route responds with 200 OK",
-			addr: ":8080",
+			addr: ":8081",
 			routes: map[string]http.HandlerFunc{
 				"GET /demo": func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusOK)
@@ -34,7 +34,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "unregistered route returns 404 Not Found",
-			addr: ":8080",
+			addr: ":8081",
 			routes: map[string]http.HandlerFunc{
 				"GET /demo": func(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusOK)
@@ -51,14 +51,14 @@ func TestNew(t *testing.T) {
 			t.Parallel()
 			s := New(tt.addr, tt.routes)
 
-			if s.httpServer.Addr != tt.addr {
-				t.Errorf("got addr %q, want %q", s.httpServer.Addr, tt.addr)
+			if s.Addr != tt.addr {
+				t.Errorf("got addr %q, want %q", s.Addr, tt.addr)
 			}
 
 			req := httptest.NewRequest(tt.method, tt.testRoute, nil)
 			rec := httptest.NewRecorder()
 
-			s.httpServer.Handler.ServeHTTP(rec, req)
+			s.Handler.ServeHTTP(rec, req)
 
 			if rec.Code != tt.expectedStatus {
 				t.Errorf("route %q returned status %d, want %d", tt.testRoute, rec.Code, tt.expectedStatus)
@@ -76,7 +76,7 @@ func Test_Lifecycle(t *testing.T) {
 		},
 	}
 
-	s := New(":8080", routes)
+	s := New(":8081", routes)
 
 	// Setup context for lifecycle control
 	ctx, cancel := context.WithCancel(context.Background())
@@ -86,12 +86,12 @@ func Test_Lifecycle(t *testing.T) {
 
 	// Start the server asynchronously
 	go func() {
-		errChan <- s.Start(ctx)
+		errChan <- Start(ctx, s)
 	}()
 
 	// Verify the server is live and accepting requests
 	client := &http.Client{Timeout: 1 * time.Second}
-	resp, err := client.Get("http://localhost:8080/demo")
+	resp, err := client.Get("http://localhost:8081/demo")
 	if err != nil {
 		t.Log(<-errChan)
 		t.Fatalf("failed to send request to started server: %v", err)

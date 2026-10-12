@@ -64,8 +64,24 @@ func (h *Handler) Routes() map[string]http.HandlerFunc {
 
 		// ─── Swagger ─────────────────────────────────────────────────
 
-		"GET /v1/swagger.yaml": h.handleSpec,
+		"GET /v1/openapi.yaml": h.handleSpec,
+		"GET /v1/swagger":      h.handleSwagger,
 	}
+}
+
+// ─── API Middlewares ─────────────────────────────────────────────────────────
+
+// Middlewares provides the list of the necessary middlewares for the API.
+func (h *Handler) Middlewares() []func(w http.ResponseWriter, r *http.Request) {
+	return []func(w http.ResponseWriter, r *http.Request){cors}
+}
+
+// ─── CORS Middleware ─────────────────────────────────────────────────────────
+
+func cors(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

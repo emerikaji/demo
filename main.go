@@ -28,14 +28,14 @@ func main() {
 
 	h := api.New(memStore, memStore, memStore, util.NewJWT("test secret")) // TODO get secret from outside
 
-	apiServer := server.New(":8080", h.Routes())
+	apiServer := server.New(":8080", h.Routes(), h.Middlewares()...)
 
 	g, gCtx := errgroup.WithContext(ctx)
 
 	log.Println("API Server starting...")
 
 	g.Go(func() error {
-		return apiServer.Start(gCtx)
+		return server.Start(gCtx, apiServer)
 	})
 
 	log.Println("API Server accepting connections.")

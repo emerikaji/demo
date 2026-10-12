@@ -1,11 +1,13 @@
 openapi: 3.2.0
 info:
   title: Event Booking API
-  description: Production-grade, secure Event Booking API built with Go, clean architecture, and JWT authentication.
-  version: 1.0.0
+  description: Secure Event Booking API with JWT authentication and timed reservations.
+  version: 0.4.0
 servers:
   - url: https://eaji.cc
     description: Production Server
+  - url: http://localhost:8080
+    description: Local Development Server
 
 paths:
   /v1/health:
