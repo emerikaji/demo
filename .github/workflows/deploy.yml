@@ -68,7 +68,7 @@ jobs:
 
             # Pull pre-built image and restart service
             docker compose pull
-            docker compose up -d --remove-orphans
+            JWT_SECRET=${{ secrets.JWT_SECRET }} docker compose up -d --remove-orphans
 
             # Clean up old/unused images
             docker image prune -f

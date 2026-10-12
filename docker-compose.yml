@@ -3,6 +3,8 @@ services:
     image: ghcr.io/emerikaji/demo:latest
     networks:
       - traefik_public
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
     labels:
       - 'traefik.enable=true'
       - 'traefik.http.routers.demo.rule=Host(`eaji.cc`)'

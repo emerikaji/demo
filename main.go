@@ -26,7 +26,7 @@ func main() {
 
 	memStore := store.NewMemoryStore()
 
-	h := api.New(memStore, memStore, memStore, util.NewJWT("test secret")) // TODO get secret from outside
+	h := api.New(memStore, memStore, memStore, util.NewJWT(os.Getenv("JWT_SECRET")))
 
 	apiServer := server.New(":8080", h.Routes(), h.Middlewares()...)
 
