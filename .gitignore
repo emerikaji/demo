@@ -9,7 +9,8 @@
 !CHANGELOG.md
 !AGENTS.md
 !Dockerfile
-!docker-compose.yml
+!k8s/
+!k8s/*
 
 # Go dependencies
 !go.mod
