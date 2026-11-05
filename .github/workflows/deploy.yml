@@ -1,15 +1,15 @@
-name: Build and Deploy
+name: Deploy
 
 on:
   workflow_run:
-    workflows: ["Test"]
+    workflows: ["Build"]
     branches:
       - main
     types:
       - completed
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
@@ -19,31 +19,6 @@ jobs:
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker BuildX
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ghcr.io/emerikaji/demo:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # --- START KUBERNETES DEPLOYMENT ENGINE ---
 
       - name: Set up Kubectl Engine
         uses: azure/setup-kubectl@v4

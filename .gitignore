@@ -17,8 +17,6 @@
 !go.sum
 
 # Go source files
-!*.go
-!**/
 !**/*.go
 
 # Other files
