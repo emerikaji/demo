@@ -9,7 +9,7 @@ metadata:
 spec:
   tls:
     - hosts:
-        - eaji.cc
+      - eaji.cc
       secretName: eaji-cc-tls
   rules:
     - host: eaji.cc
