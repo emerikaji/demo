@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 )
@@ -16,12 +17,30 @@ type Server struct {
 	middlewares []func(w http.ResponseWriter, r *http.Request)
 }
 
+type LoggingResponseWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (lrw *LoggingResponseWriter) WriteHeader(status int) {
+	lrw.ResponseWriter.WriteHeader(status)
+	lrw.status = status
+}
+
 // ServeHTTP wraps the httpServer's method to implement the http.Handler interface.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	start := time.Now()
+
+	lrw := &LoggingResponseWriter{ResponseWriter: w}
+
 	for _, middleware := range s.middlewares {
-		middleware(w, r)
+		middleware(lrw, r)
 	}
-	s.mux.ServeHTTP(w, r)
+	s.mux.ServeHTTP(lrw, r)
+
+	duration := time.Since(start)
+
+	log.Printf("%s %s %d %v %s", r.Method, r.URL.Path, lrw.status, duration, r.RemoteAddr)
 }
 
 // New is a generator that creates an http.Server with the provided address and an http.ServeMux handler.
