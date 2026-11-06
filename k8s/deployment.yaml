@@ -31,21 +31,26 @@ spec:
                 secretKeyRef:
                   name: demo-secret
                   key: JWT_SECRET
+          startupProbe:
+            httpGet:
+              path: /v1/health
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 2
           livenessProbe:
             httpGet:
               path: /v1/health
               port: 8080
-            initialDelaySeconds: 3
-            periodSeconds: 10
-            failureThreshold: 3
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 2
           readinessProbe:
             httpGet:
               path: /v1/health
               port: 8080
-            initialDelaySeconds: 2
-            periodSeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
             failureThreshold: 2
-            successThreshold: 1
 ---
 apiVersion: v1
 kind: Service

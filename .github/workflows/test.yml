@@ -9,6 +9,8 @@ on:
       - "**/*.go"
       - "go.mod"
       - "go.sum"
+      - "api/public/*" # Since using go:embed, update the app fully if those change
+      - "k8s/*.yaml"   # Redeploy upon any structural changes
   pull_request:
     branches:
       - main
@@ -16,6 +18,8 @@ on:
       - "**/*.go"
       - "go.mod"
       - "go.sum"
+      - "api/public/*"
+      - "k8s/*.yaml"
 
 jobs:
   test:

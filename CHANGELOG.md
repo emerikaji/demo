@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 06/11/2026
+
+### Added
+
+- Route-level logging added by intercepting WriteHeader.
+
+### Changed
+
+- Fully migrated from docker-compose to Kubernetes.
+  - Workflows updated to deploy using kubectl.
+  - docker-compose replaced with k8s YAMLs.
+
 ## [0.4.0] - 12/09/2026
 
 ### Added
